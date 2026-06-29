@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# 仮想環境
+.venv/
+venv/
+env/
+
+# テスト・カバレッジ
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 型チェック
+.mypy_cache/
+
+# 環境変数（APIキーを含む可能性があるため必須）
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# データ（生データは容量大・GitHub Pages 不要）
+data/raw/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# ログ
+*.log

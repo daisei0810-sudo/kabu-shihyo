@@ -1,0 +1,14 @@
+pandas>=2.2
+numpy>=1.26
+scipy>=1.13
+statsmodels>=0.14
+scikit-learn>=1.5
+plotly>=5.22
+yfinance>=0.2.40
+requests>=2.32
+pydantic>=2.7
+python-dateutil>=2.9
+# dev
+pytest>=8.2
+ruff>=0.5
+mypy>=1.10

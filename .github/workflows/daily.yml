@@ -1,0 +1,73 @@
+name: 毎日更新 + ダッシュボード公開
+
+# JST 07:00 = UTC 22:00 に毎日実行。手動トリガーも可能。
+on:
+  schedule:
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write     # data/ outputs/ のコミット・プッシュ
+  pages: write        # GitHub Pages デプロイ
+  id-token: write     # actions/deploy-pages 用 OIDC トークン
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ──────────────────────────────────────────
+  # 1. データ取得 → スコアリング → レポート生成
+  # ──────────────────────────────────────────
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: チェックアウト (全履歴: XRPL日次蓄積に必要)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: 依存パッケージインストール
+        run: pip install -r requirements.txt
+
+      - name: 全ステップ実行 (Step1→2→3→4)
+        run: python -m src.main --step all
+        env:
+          FRED_API_KEY:       ${{ secrets.FRED_API_KEY }}
+          COINGECKO_API_KEY:  ${{ secrets.COINGECKO_API_KEY }}
+
+      - name: データ・レポート・ダッシュボードをコミット
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ outputs/
+          git diff --cached --quiet \
+            || git commit -m "chore: daily update $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: GitHub Pages デプロイ用アーティファクトをアップロード
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: outputs/
+
+  # ──────────────────────────────────────────
+  # 2. GitHub Pages デプロイ
+  # ──────────────────────────────────────────
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: GitHub Pages にデプロイ
+        id: deployment
+        uses: actions/deploy-pages@v4

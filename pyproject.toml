@@ -1,0 +1,27 @@
+[project]
+name = "kabu-leading-indicator"
+version = "0.1.0"
+description = "ニュース化前の初動を検知する先行指標監視システム"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ANN"]
+ignore = [
+    "ANN101", "ANN102",
+    "UP042",   # (str, Enum) はJSON/pydantic互換のため意図的に使用
+    "ANN401",  # 生JSONパースで typing.Any を許容
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

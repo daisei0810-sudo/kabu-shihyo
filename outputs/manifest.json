@@ -1,0 +1,17 @@
+{
+  "name": "先行指標監視ダッシュボード",
+  "short_name": "株指標",
+  "description": "ニュース化前の初動を検知する先行指標監視システム",
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "#0e1117",
+  "background_color": "#0e1117",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e1117'/><text y='72' font-size='72' text-anchor='middle' x='50'>📊</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
