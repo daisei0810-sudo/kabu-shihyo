@@ -18,12 +18,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 
 from src.config import OUTPUTS, Layer, held_instruments
 from src.scoring.engine import AssetScore, ScoreEngine
+from src.scoring.technicals import MacroResult, TechnicalResult, compute_macro, compute_technicals
 from src.scoring.xrp_scores import XrpDemandResult, compute_xrp_lock_demand, compute_xrp_real_demand
 
 logger = logging.getLogger(__name__)
@@ -56,6 +58,8 @@ class PortfolioResult:
     xrp_lock_demand: XrpDemandResult | None = None
     portfolio_hard_avg: float | None = None
     portfolio_extended_avg: float | None = None
+    technicals: list[TechnicalResult] = field(default_factory=list)
+    macro: MacroResult | None = None
 
 
 def _map_decision(
@@ -192,6 +196,18 @@ class PortfolioScorer:
         result.portfolio_extended_avg = (
             round(sum(ext_scores) / len(ext_scores), 1) if ext_scores else None
         )
+
+        # --- テクニカル指標 + マクロ ---
+        try:
+            result.technicals = compute_technicals()
+        except Exception as exc:
+            logger.warning("technicals failed: %s", exc)
+
+        try:
+            result.macro = compute_macro()
+        except Exception as exc:
+            logger.warning("macro failed: %s", exc)
+
         return result
 
     def _to_signal(
@@ -273,3 +289,38 @@ class PortfolioScorer:
             result.portfolio_hard_avg,
             result.portfolio_extended_avg,
         )
+
+        # --- テクニカルスコア CSV ---
+        if result.technicals:
+            tech_rows = [
+                {
+                    "target": t.target,
+                    "name_ja": t.name_ja,
+                    "rsi": t.rsi,
+                    "ma25_dev": t.ma25_dev,
+                    "ma75_dev": t.ma75_dev,
+                    "ma200_dev": t.ma200_dev,
+                    "close": t.close,
+                    "tech_outlook": t.tech_outlook,
+                    "tech_note": t.tech_note,
+                }
+                for t in result.technicals
+            ]
+            tech_path = OUTPUT_DIR / "technical_scores.csv"
+            pd.DataFrame(tech_rows).to_csv(tech_path, index=False, encoding="utf-8-sig")
+            logger.info("saved: %s (%d rows)", tech_path, len(tech_rows))
+
+        # --- マクロ指標 CSV ---
+        if result.macro:
+            m = result.macro
+            macro_path = OUTPUT_DIR / "macro_indicators.csv"
+            pd.DataFrame([{
+                "vix": m.vix,
+                "vix_label": m.vix_label,
+                "usdjpy": m.usdjpy,
+                "usdjpy_trend": m.usdjpy_trend,
+                "us10y": m.us10y,
+                "us10y_trend": m.us10y_trend,
+                "generated_at": datetime.now().isoformat(),
+            }]).to_csv(macro_path, index=False, encoding="utf-8-sig")
+            logger.info("saved: %s", macro_path)

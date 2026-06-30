@@ -122,6 +122,75 @@ def _section_xrp(df: pd.DataFrame) -> list[str]:
     return lines
 
 
+def _section_macro(macro: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## マクロ環境", ""]
+    if macro is None or macro.empty:
+        lines += ["*マクロデータなし (VIX/USDJPY/US10Y は Step1 で取得)*", ""]
+        return lines
+
+    row = macro.iloc[0]
+
+    def _v(col: str, fmt: str = ".2f") -> str:
+        v = row.get(col)
+        try:
+            return f"{float(v):{fmt}}" if pd.notna(v) else "--"
+        except (TypeError, ValueError):
+            return "--"
+
+    lines.append("| 指標 | 現在値 | トレンド |")
+    lines.append("|------|-------:|---------|")
+    lines.append(f"| VIX | {_v('vix', '.1f')} ({row.get('vix_label','--')}) | — |")
+    lines.append(
+        f"| USD/JPY | {_v('usdjpy', '.2f')} | {row.get('usdjpy_trend','')} |"
+    )
+    lines.append(
+        f"| 米10年金利 | {_v('us10y', '.2f')}% | {row.get('us10y_trend','')} |"
+    )
+    lines.append("")
+    return lines
+
+
+def _section_technicals(tech: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## テクニカル判定 (RSI・移動平均乖離)", ""]
+    if tech is None or tech.empty:
+        lines += ["*テクニカルデータなし (Step3 未実行)*", ""]
+        return lines
+
+    _TECH_ICON: dict[str, str] = {
+        "強い押し目候補": "🟢",
+        "押し目候補":     "🟡",
+        "中立":           "⚪",
+        "過熱警戒":       "🟠",
+        "強い過熱警戒":   "🔴",
+        "データ不足":     "❓",
+        "不明":           "❓",
+    }
+
+    def _icon(outlook: str) -> str:
+        for k, ic in _TECH_ICON.items():
+            if k in outlook:
+                return ic
+        return "⚪"
+
+    lines.append("| 銘柄 | RSI | 25MA乖離 | 200MA乖離 | 判定 |")
+    lines.append("|------|----:|--------:|---------:|------|")
+    for _, row in tech.iterrows():
+        rsi   = _fmt_score(row.get("rsi"))
+        d25   = f"{float(row.get('ma25_dev')):+.1f}%" if pd.notna(row.get("ma25_dev")) else "--"
+        d200  = f"{float(row.get('ma200_dev')):+.1f}%" if pd.notna(row.get("ma200_dev")) else "--"
+        out   = str(row.get("tech_outlook", "--"))
+        icon  = _icon(out)
+        lines.append(
+            f"| {row.get('name_ja', row.get('target',''))} "
+            f"| {rsi} | {d25} | {d200} | {icon} {out} |"
+        )
+    lines.append("")
+    lines.append("> RSI<30 + 200MA乖離<-10% = 強い押し目候補  "
+                 "| RSI>70 + 200MA乖離>+20% = 強い過熱警戒")
+    lines.append("")
+    return lines
+
+
 def _section_scorecard(sc: pd.DataFrame) -> list[str]:
     lines: list[str] = ["## 有効性スコアカード (定常相関ベース)", ""]
 
@@ -193,6 +262,8 @@ def generate_daily_report() -> str:
 
     signals_df = _load_csv("portfolio_signal_scores.csv")
     sc_df      = _load_csv("indicator_scorecard.csv")
+    tech_df    = _load_csv("technical_scores.csv")
+    macro_df   = _load_csv("macro_indicators.csv")
 
     if signals_df is not None and not signals_df.empty:
         lines.extend(_section_portfolio(signals_df))
@@ -200,6 +271,8 @@ def generate_daily_report() -> str:
     else:
         lines += ["*portfolio_signal_scores.csv なし (Step3 未実行)*", ""]
 
+    lines.extend(_section_macro(macro_df if macro_df is not None else pd.DataFrame()))
+    lines.extend(_section_technicals(tech_df if tech_df is not None else pd.DataFrame()))
     lines.extend(_section_scorecard(sc_df if sc_df is not None else pd.DataFrame()))
     lines.extend(_section_data_quality())
 

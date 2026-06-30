@@ -144,6 +144,9 @@ INDEX_TICKERS: dict[str, str] = {
     "sox": "^SOX",     # フィラデルフィア半導体指数
     "smh": "SMH",      # 半導体ETF
     "soxx": "SOXX",
+    "vix": "^VIX",     # 恐怖指数 (市場リスク判定)
+    "usdjpy": "JPY=X", # ドル円 (日本株グロースのバリュエーション)
+    "us10y": "^TNX",   # 米10年金利 (割引率)
 }
 
 

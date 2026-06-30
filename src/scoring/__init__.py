@@ -1,6 +1,7 @@
 from src.scoring.engine import AssetScore, IndicatorContribution, ScoreEngine
 from src.scoring.normalizer import percentile_rank_score, score_from_series, zscore_to_score
 from src.scoring.portfolio import InvestmentSignal, PortfolioResult, PortfolioScorer
+from src.scoring.technicals import MacroResult, TechnicalResult, compute_macro, compute_technicals
 from src.scoring.xrp_scores import (
     XrpComponentScore,
     XrpDemandResult,
@@ -18,6 +19,10 @@ __all__ = [
     "InvestmentSignal",
     "PortfolioResult",
     "PortfolioScorer",
+    "MacroResult",
+    "TechnicalResult",
+    "compute_macro",
+    "compute_technicals",
     "XrpComponentScore",
     "XrpDemandResult",
     "compute_xrp_lock_demand",

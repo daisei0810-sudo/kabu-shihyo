@@ -194,6 +194,118 @@ def _make_xrp_gauges(signals_df: pd.DataFrame) -> str:
                config={"responsive": True, "displayModeBar": False}, div_id="xrp-gauges")
 
 
+def _make_technical_table(tech_df: pd.DataFrame) -> str:
+    """テクニカル指標テーブル → plotly div 文字列。"""
+    if tech_df.empty or "target" not in tech_df.columns:
+        return "<p style='color:#888'>テクニカルデータなし (Step3 未実行)</p>"
+
+    _TECH_COLOR: dict[str, str] = {
+        "強い押し目候補": "#00cc88",
+        "押し目候補":     "#66bb66",
+        "中立":           "#888888",
+        "過熱警戒":       "#dd9900",
+        "強い過熱警戒":   "#cc3333",
+        "データ不足":     "#444444",
+        "不明":           "#444444",
+    }
+
+    def _tech_color(outlook: str) -> str:
+        for k, c in _TECH_COLOR.items():
+            if k in outlook:
+                return c
+        return "#555555"
+
+    df = tech_df.copy()
+    names    = df.get("name_ja", df["target"]).tolist()
+    rsis     = [_fmt(v, ".0f") for v in df.get("rsi", pd.Series())]
+    dev25s   = [f"{float(v):+.1f}%" if pd.notna(v) else "--"
+                for v in df.get("ma25_dev", pd.Series())]
+    dev200s  = [f"{float(v):+.1f}%" if pd.notna(v) else "--"
+                for v in df.get("ma200_dev", pd.Series())]
+    outlooks = df.get("tech_outlook", pd.Series(["--"] * len(df))).tolist()
+    notes    = [str(v)[:40] for v in df.get("tech_note", pd.Series())]
+
+    row_colors = [[_tech_color(str(o))] * 5 for o in outlooks]
+    col_colors = list(map(list, zip(*row_colors, strict=False)))
+
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=["<b>銘柄</b>", "<b>RSI(14)</b>", "<b>25MA乖離</b>",
+                    "<b>200MA乖離</b>", "<b>テクニカル判定</b>"],
+            fill_color="#1a2a3a",
+            font=dict(color="white", size=11),
+            align="left",
+            height=30,
+        ),
+        cells=dict(
+            values=[names, rsis, dev25s, dev200s, outlooks],
+            fill_color=col_colors,
+            font=dict(color="white", size=11),
+            align=["left", "right", "right", "right", "left"],
+            height=26,
+        ),
+    )])
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=max(180, len(df) * 28 + 50),
+        autosize=True,
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+               config={"responsive": True, "displayModeBar": False},
+               div_id="technical-table")
+
+
+def _make_macro_section(macro_df: pd.DataFrame) -> str:
+    """マクロ指標サマリー → HTML 文字列。"""
+    if macro_df.empty:
+        return "<p style='color:#888'>マクロデータなし (VIX/USDJPY/US10Y は Step1 で取得)</p>"
+
+    row = macro_df.iloc[0]
+
+    def _val(col: str, fmt: str = ".2f") -> str:
+        v = row.get(col)
+        try:
+            return f"{float(v):{fmt}}" if pd.notna(v) else "--"
+        except (TypeError, ValueError):
+            return "--"
+
+    vix      = _val("vix", ".1f")
+    vix_lbl  = str(row.get("vix_label", "--"))
+    usdjpy   = _val("usdjpy", ".2f")
+    uy_trend = str(row.get("usdjpy_trend", ""))
+    us10y    = _val("us10y", ".2f")
+    u10_trend = str(row.get("us10y_trend", ""))
+
+    # VIX に色をつける
+    vix_val = float(row.get("vix") or 0)
+    vix_color = ("#00cc66" if vix_val < 15
+                 else "#99cc00" if vix_val < 20
+                 else "#ddaa00" if vix_val < 25
+                 else "#dd7700" if vix_val < 30
+                 else "#cc3333")
+
+    return (
+        f"<div style='display:flex;flex-wrap:wrap;gap:8px;padding:4px 0'>"
+        f"<div style='background:#1a2a3a;border-radius:6px;padding:8px 14px;min-width:100px'>"
+        f"<div style='color:#888;font-size:0.7rem'>VIX</div>"
+        f"<div style='color:{vix_color};font-size:1.3rem;font-weight:bold'>{vix}</div>"
+        f"<div style='color:#aaa;font-size:0.7rem'>{vix_lbl}</div>"
+        f"</div>"
+        f"<div style='background:#1a2a3a;border-radius:6px;padding:8px 14px;min-width:100px'>"
+        f"<div style='color:#888;font-size:0.7rem'>USD/JPY</div>"
+        f"<div style='color:#e0e0e0;font-size:1.3rem;font-weight:bold'>{usdjpy}</div>"
+        f"<div style='color:#aaa;font-size:0.7rem'>{uy_trend}</div>"
+        f"</div>"
+        f"<div style='background:#1a2a3a;border-radius:6px;padding:8px 14px;min-width:100px'>"
+        f"<div style='color:#888;font-size:0.7rem'>米10年金利</div>"
+        f"<div style='color:#e0e0e0;font-size:1.3rem;font-weight:bold'>{us10y}%</div>"
+        f"<div style='color:#aaa;font-size:0.7rem'>{u10_trend}</div>"
+        f"</div>"
+        f"</div>"
+    )
+
+
 def _make_scorecard_table(sc_df: pd.DataFrame) -> str:
     """指標スコアカードテーブル → plotly div 文字列。"""
     if sc_df.empty:
@@ -352,6 +464,16 @@ _HTML_TEMPLATE = """\
 </div>
 
 <div class="section">
+  <h2>マクロ環境</h2>
+  {macro_div}
+</div>
+
+<div class="section">
+  <h2>テクニカル判定 (RSI・MA乖離)</h2>
+  {technical_div}
+</div>
+
+<div class="section">
   <h2>指標スコアカード</h2>
   {scorecard_div}
 </div>
@@ -387,11 +509,15 @@ def build_dashboard() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     now = datetime.now()
 
-    signals_df = _load_csv("portfolio_signal_scores.csv")
-    sc_df      = _load_csv("indicator_scorecard.csv")
+    signals_df  = _load_csv("portfolio_signal_scores.csv")
+    sc_df       = _load_csv("indicator_scorecard.csv")
+    tech_df     = _load_csv("technical_scores.csv")
+    macro_df    = _load_csv("macro_indicators.csv")
 
     portfolio_div = _make_portfolio_table(signals_df)
     xrp_div       = _make_xrp_gauges(signals_df)
+    technical_div = _make_technical_table(tech_df)
+    macro_div     = _make_macro_section(macro_df)
     scorecard_div = _make_scorecard_table(sc_df)
 
     html = _HTML_TEMPLATE.format(
@@ -399,6 +525,8 @@ def build_dashboard() -> None:
         timestamp=now.strftime("%Y-%m-%d %H:%M"),
         portfolio_div=portfolio_div,
         xrp_div=xrp_div,
+        technical_div=technical_div,
+        macro_div=macro_div,
         scorecard_div=scorecard_div,
     )
 
