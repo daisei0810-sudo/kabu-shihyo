@@ -110,8 +110,10 @@ def _make_portfolio_table(signals_df: pd.DataFrame) -> str:
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=0, r=0, t=0, b=0),
         height=max(200, len(df) * 30 + 50),
+        autosize=True,
     )
-    return fig.to_html(full_html=False, include_plotlyjs=False, div_id="portfolio-table")
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+               config={"responsive": True, "displayModeBar": False}, div_id="portfolio-table")
 
 
 def _make_xrp_gauges(signals_df: pd.DataFrame) -> str:
@@ -175,8 +177,9 @@ def _make_xrp_gauges(signals_df: pd.DataFrame) -> str:
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         font={"color": "#e0e0e0"},
-        height=240,
-        margin=dict(l=16, r=16, t=48, b=8),
+        height=220,
+        margin=dict(l=8, r=8, t=40, b=4),
+        autosize=True,
     )
 
     # 段階ラベル注記
@@ -187,7 +190,8 @@ def _make_xrp_gauges(signals_df: pd.DataFrame) -> str:
             showarrow=False, font=dict(size=10, color="#aaa"),
         )
 
-    return fig.to_html(full_html=False, include_plotlyjs=False, div_id="xrp-gauges")
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+               config={"responsive": True, "displayModeBar": False}, div_id="xrp-gauges")
 
 
 def _make_scorecard_table(sc_df: pd.DataFrame) -> str:
@@ -237,8 +241,10 @@ def _make_scorecard_table(sc_df: pd.DataFrame) -> str:
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=0, r=0, t=0, b=0),
         height=max(200, len(sc_df) * 26 + 50),
+        autosize=True,
     )
-    return fig.to_html(full_html=False, include_plotlyjs=False, div_id="scorecard-table")
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+               config={"responsive": True, "displayModeBar": False}, div_id="scorecard-table")
 
 
 # ---------------------------------------------------------------------------
@@ -311,15 +317,20 @@ _HTML_TEMPLATE = """\
   <style>
     *{{box-sizing:border-box;margin:0;padding:0}}
     body{{background:#0e1117;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;
-          padding:8px 12px;max-width:1200px;margin:0 auto}}
-    h1{{color:#7eb3ff;font-size:1.1rem;margin:8px 0 4px}}
-    h2{{color:#b8d4ff;font-size:0.95rem;border-bottom:1px solid #2a3a4a;
-        margin:16px 0 8px;padding-bottom:4px}}
-    .meta{{color:#666;font-size:0.75rem;margin:2px 0 8px}}
-    .warn{{color:#ffa500;font-size:0.8rem;padding:6px 10px;
-           background:#2a1a00;border-radius:4px;margin:8px 0}}
-    .section{{margin:0 0 16px}}
-    .badges{{color:#888;font-size:0.75rem;line-height:1.8}}
+          padding:8px 10px;max-width:1200px;margin:0 auto;overflow-x:hidden}}
+    h1{{color:#7eb3ff;font-size:1.05rem;margin:8px 0 4px}}
+    h2{{color:#b8d4ff;font-size:0.9rem;border-bottom:1px solid #2a3a4a;
+        margin:14px 0 6px;padding-bottom:4px}}
+    .meta{{color:#666;font-size:0.72rem;margin:2px 0 6px}}
+    .warn{{color:#ffa500;font-size:0.75rem;padding:5px 8px;
+           background:#2a1a00;border-radius:4px;margin:6px 0}}
+    .section{{margin:0 0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}}
+    .badges{{color:#888;font-size:0.7rem;line-height:2.0}}
+    .js-plotly-plot,.plot-container{{max-width:100%!important}}
+    @media(max-width:480px){{
+      body{{padding:6px 6px}}
+      h1{{font-size:0.95rem}}
+    }}
   </style>
 </head>
 <body>
