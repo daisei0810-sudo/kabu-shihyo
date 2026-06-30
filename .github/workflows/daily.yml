@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: チェックアウト (全履歴: XRPL日次蓄積に必要)
+      - name: "チェックアウト (全履歴: XRPL日次蓄積に必要)"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
