@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from datetime import date
 
@@ -63,7 +64,12 @@ TOPIC_KEYWORDS: dict[str, list[str]] = {
     "ORDER_BACKLOG": ["backlog", "受注残", "order backlog"],
     "SUBSIDY": ["subsidy", "chips act", "補助金", "grant"],
     "EXPORT_CONTROL": ["export control", "export restriction", "輸出規制"],
-    "EARNINGS": ["earnings", "quarterly results", "決算"],
+    "EARNINGS": [
+        "earnings", "quarterly results", "決算", "四半期報告書", "有価証券報告書",
+    ],
+    "OWNERSHIP_CHANGE": ["大量保有報告書", "大量保有", "自己株式取得", "自己株式"],
+    "MATERIAL_EVENT": ["臨時報告書", "extraordinary report"],
+    "REGISTRATION_AMENDMENT": ["訂正発行登録書", "発行登録書", "有価証券届出書"],
     "IPO": ["ipo", "listing", "上場"],
 }
 
@@ -78,8 +84,23 @@ def _normalize_company(company: str) -> str:
     key = company.strip().lower()
     if key in COMPANY_ALIASES:
         return COMPANY_ALIASES[key]
+
+    # 完全一致しない場合、部分一致を試す(例: EDINETの提出者名は
+    # "株式会社村田製作所"のように法人格接頭辞が付き、COMPANY_ALIASESの
+    # "村田製作所"とは完全一致しないため)。
+    alias = extract_company_alias(company)
+    if alias is not None:
+        return COMPANY_ALIASES[alias]
+
     fallback = re.sub(r"[^A-Za-z0-9]", "", company.upper())[:_MAX_TOKEN_LEN]
-    return fallback or "UNKNOWNCO"
+    if fallback:
+        return fallback
+
+    # 日本語企業名等、ASCII成分が無く別名辞書にも無い場合。全て"UNKNOWNCO"に
+    # 集約すると異なる企業の材料が同一dedup_bucketに衝突してしまうため、
+    # 企業名のハッシュ由来トークンで区別する(決定的: 同じ企業名は常に同じトークン)。
+    digest = hashlib.sha1(company.strip().encode("utf-8")).hexdigest()[:8].upper()  # noqa: S324
+    return f"JPCO{digest}"
 
 
 def extract_company_alias(text: str) -> str | None:

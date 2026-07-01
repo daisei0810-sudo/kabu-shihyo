@@ -15,7 +15,7 @@
                           (例: "kabu-shihyo-tool your-email@example.com")
   EDINET_API_KEY         : EDINET(日本の開示システム)無料APIキー
                           (https://api.edinet-fsa.go.jp で登録。未設定時はEDINETスキップ。
-                          未検証実装のため、設定後は必ず --step 5 で動作確認すること)
+                          動作確認済み — 保有の日本上場銘柄の材料取得に使用)
 """
 
 from __future__ import annotations
@@ -119,10 +119,9 @@ def run_step5() -> None:
     `--step all` にはまだ含めない: 日次自動実行(GitHub Actions)へ組み込む前に、
     手動実行で実データに対する動作を確認すること。
 
-    EDINET(日本の開示システム)はAPIキー未検証のため、EDINET_API_KEY未設定時は
-    自動的にスキップされる(クラッシュしない)。実際に使う場合は
-    https://api.edinet-fsa.go.jp で無料登録しキーを設定した上で、
-    このStepを手動実行して取得できているか確認すること。
+    EDINET(日本の開示システム)は動作確認済み。EDINET_API_KEY未設定時は
+    自動的にスキップされる(クラッシュしない)。未取得の場合は
+    https://api.edinet-fsa.go.jp で無料登録すること。
     """
     logger.info("=" * 60)
     logger.info("Step5: 材料取込開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))

@@ -56,6 +56,34 @@ class TestMaterialId:
         mid = generate_material_id("フジクラ", "capex increase", date(2026, 1, 1), set())
         assert mid.startswith("FUJIKURA_")
 
+    def test_japanese_legal_prefix_still_matches_alias(self) -> None:
+        # 回帰テスト: EDINETの提出者名は"株式会社フジクラ"のように法人格接頭辞が
+        # 付くため完全一致しない。部分一致でCOMPANY_ALIASESにヒットすること
+        # (以前は非ASCII文字が全てストリップされ"UNKNOWNCO"に落ちるバグがあった)。
+        mid = generate_material_id("株式会社フジクラ", "臨時報告書", date(2026, 6, 30), set())
+        assert mid.startswith("FUJIKURA_")
+        assert "UNKNOWNCO" not in mid
+
+    def test_japanese_legal_prefix_murata(self) -> None:
+        mid = generate_material_id("株式会社村田製作所", "臨時報告書", date(2026, 7, 1), set())
+        assert mid.startswith("MURATA_")
+
+    def test_unknown_japanese_company_gets_distinct_hash_token(self) -> None:
+        # 別名辞書に無い日本語企業名は、全て"UNKNOWNCO"に集約せず
+        # 企業ごとに異なるハッシュトークンで区別されること(dedup_bucket衝突回避)。
+        mid1 = generate_material_id("株式会社サンプルA", "臨時報告書", date(2026, 1, 1), set())
+        mid2 = generate_material_id("株式会社サンプルB", "臨時報告書", date(2026, 1, 1), set())
+        assert mid1 != mid2
+        assert "UNKNOWNCO" not in mid1
+        assert "UNKNOWNCO" not in mid2
+
+    def test_edinet_material_event_topic_classified(self) -> None:
+        # 実際のEDINETドキュメント種別("臨時報告書")がMISCに落ちず分類されること
+        mid = generate_material_id(
+            "株式会社フジクラ", "株式会社フジクラ 臨時報告書", date(2026, 6, 30), set()
+        )
+        assert "MATERIAL_EVENT" in mid
+
 
 # ---------------------------------------------------------------------------
 # dedup
