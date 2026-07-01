@@ -18,6 +18,7 @@ import sqlite3
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 
+from src.data_sources.edinet import fetch_edinet_for_companies, parse_submit_datetime
 from src.data_sources.rss_fetcher import RssSourceConfig, fetch_all_configured_sources
 from src.data_sources.sec_edgar import fetch_edgar_for_companies
 from src.materials.db import (
@@ -101,6 +102,31 @@ def _edgar_hits_to_drafts(
             title=f"{filer_name} {form}".strip(),
             summary=f"accession={h.get('accession_no')} matched_query={h.get('query_company')}",
             source_id="sec_edgar",
+            source_rank=SourceRank.A,
+            published_at=published,
+            detected_at=detected_at,
+            company_hint=filer_name,
+        ))
+    return drafts
+
+
+def _edinet_docs_to_drafts(
+    docs: list[dict], detected_at: datetime
+) -> list[MaterialDraft]:
+    """EDINET開示一覧 → MaterialDraft。
+
+    company_hint には実際の提出者(filerName)を入れる(SEC EDGARと同じ理由 —
+    検索マッチに使ったエイリアスではなく、提出者そのものを企業として扱う)。
+    """
+    drafts = []
+    for d in docs:
+        filer_name = str(d.get("filerName") or "Unknown Filer")
+        desc = str(d.get("docDescription") or "")
+        published = parse_submit_datetime(d.get("submitDateTime"))
+        drafts.append(MaterialDraft(
+            title=f"{filer_name} {desc}".strip(),
+            summary=f"docID={d.get('docID')} formCode={d.get('formCode')}",
+            source_id="edinet",
             source_rank=SourceRank.A,
             published_at=published,
             detected_at=detected_at,
@@ -239,8 +265,9 @@ def run_ingest(
     dump_dir: str,
     company_queries: list[str] | None = None,
     edgar_forms: list[str] | None = None,
+    edinet_company_aliases: list[str] | None = None,
 ) -> dict[str, int]:
-    """SEC EDGAR + RSS + 手動入力を取込み、DBへ登録してJSONLへ書き戻す。
+    """SEC EDGAR + EDINET + RSS + 手動入力を取込み、DBへ登録してJSONLへ書き戻す。
 
     どのソースも設定/データが無ければ静かにスキップする(クラッシュしない)。
     戻り値は各ソースの新規登録件数のサマリ。
@@ -251,7 +278,7 @@ def run_ingest(
     rebuild_from_jsonl(conn, dump_dir)
 
     now = datetime.now(UTC)
-    counts = {"sec_edgar": 0, "rss": 0, "manual": 0}
+    counts = {"sec_edgar": 0, "edinet": 0, "rss": 0, "manual": 0}
 
     if company_queries:
         try:
@@ -261,6 +288,15 @@ def run_ingest(
                     counts["sec_edgar"] += 1
         except Exception as exc:
             logger.warning("SEC EDGAR取込失敗: %s", exc)
+
+    if edinet_company_aliases:
+        try:
+            docs = fetch_edinet_for_companies(edinet_company_aliases)
+            for draft in _edinet_docs_to_drafts(docs, now):
+                if ingest_draft(conn, draft) is not None:
+                    counts["edinet"] += 1
+        except Exception as exc:
+            logger.warning("EDINET取込失敗: %s", exc)
 
     try:
         for source, entries in fetch_all_configured_sources():

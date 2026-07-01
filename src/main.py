@@ -4,7 +4,7 @@
   python -m src.main              # Step1: データ取得のみ
   python -m src.main --step 2     # Step2: 有効性検証のみ
   python -m src.main --step 3     # Step3: スコアリングのみ
-  python -m src.main --step 5     # Step5: 材料取込(SEC EDGAR+RSS+手動入力。allには未含有)
+  python -m src.main --step 5     # Step5: 材料取込(SEC EDGAR+EDINET+RSS+手動入力。allには未含有)
   python -m src.main --step 6     # Step6: 通知パイプライン(§13/§17/§18)
   python -m src.main --step all   # 全ステップ(1→2→3→6→4、5材料取込は含まない)
 
@@ -13,6 +13,9 @@
   COINGECKO_API_KEY     : CoinGecko Demo APIキー (未設定時はyfinanceフォールバック)
   SEC_EDGAR_USER_AGENT  : SEC EDGAR Fair Accessポリシー用の連絡先付きUser-Agent
                           (例: "kabu-shihyo-tool your-email@example.com")
+  EDINET_API_KEY         : EDINET(日本の開示システム)無料APIキー
+                          (https://api.edinet-fsa.go.jp で登録。未設定時はEDINETスキップ。
+                          未検証実装のため、設定後は必ず --step 5 で動作確認すること)
 """
 
 from __future__ import annotations
@@ -109,12 +112,17 @@ def run_step3() -> None:
 
 
 def run_step5() -> None:
-    """Step5: 材料取込(SEC EDGAR + RSS + 手動入力)。Phase6 基盤。
+    """Step5: 材料取込(SEC EDGAR + EDINET + RSS + 手動入力)。Phase6 基盤。
 
     ニュース/IR/政府発表を取込み、重複検知・鮮度判定を経て data/materials.db
     (揮発キャッシュ) へ登録し、data/materials/*.jsonl(正本)へ書き戻す。
     `--step all` にはまだ含めない: 日次自動実行(GitHub Actions)へ組み込む前に、
     手動実行で実データに対する動作を確認すること。
+
+    EDINET(日本の開示システム)はAPIキー未検証のため、EDINET_API_KEY未設定時は
+    自動的にスキップされる(クラッシュしない)。実際に使う場合は
+    https://api.edinet-fsa.go.jp で無料登録しキーを設定した上で、
+    このStepを手動実行して取得できているか確認すること。
     """
     logger.info("=" * 60)
     logger.info("Step5: 材料取込開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
@@ -128,15 +136,25 @@ def run_step5() -> None:
         inst.name_ja for inst in held_instruments()
         if inst.ticker and not inst.ticker.endswith(".T") and "-USD" not in inst.ticker
     ]
+    # EDINETは日本上場企業(.Tティッカー)が対象。SEC EDGARが一切カバーできない
+    # 保有銘柄の大半(フジクラ/ローツェ/キオクシア等)をここで補う。
+    jp_company_aliases = [
+        inst.name_ja for inst in held_instruments()
+        if inst.ticker and inst.ticker.endswith(".T")
+    ]
 
     counts = run_ingest(
         db_path=MATERIALS_DB,
         dump_dir=MATERIALS_DUMP_DIR,
         company_queries=us_company_queries,
         edgar_forms=["8-K", "10-Q", "10-K"],
+        edinet_company_aliases=jp_company_aliases,
     )
-    logger.info("材料取込サマリ: SEC EDGAR=%d件 / RSS=%d件 / 手動=%d件",
-                counts.get("sec_edgar", 0), counts.get("rss", 0), counts.get("manual", 0))
+    logger.info(
+        "材料取込サマリ: SEC EDGAR=%d件 / EDINET=%d件 / RSS=%d件 / 手動=%d件",
+        counts.get("sec_edgar", 0), counts.get("edinet", 0),
+        counts.get("rss", 0), counts.get("manual", 0),
+    )
     logger.info("=" * 60)
 
 

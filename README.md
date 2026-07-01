@@ -28,6 +28,12 @@ $env:COINGECKO_API_KEY = "your_key_here"
 
 # SEC EDGAR Fair Accessポリシー用の連絡先付きUser-Agent（Step5で使用）
 $env:SEC_EDGAR_USER_AGENT = "kabu-shihyo-tool your-email@example.com"
+
+# EDINET（日本の開示システム）APIキー（無料: https://api.edinet-fsa.go.jp で登録）
+# 保有銘柄の大半（フジクラ/ローツェ/キオクシア等）は日本上場のためSEC EDGARでは
+# カバーできず、これが実質的な材料取得源になる。未検証実装のため設定後は
+# 必ず --step 5 で動作確認すること（詳細: config/README.md）
+$env:EDINET_API_KEY = "your_key_here"
 ```
 
 ## 実行方法
