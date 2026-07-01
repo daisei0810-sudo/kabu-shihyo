@@ -5,7 +5,8 @@
   python -m src.main --step 2     # Step2: 有効性検証のみ
   python -m src.main --step 3     # Step3: スコアリングのみ
   python -m src.main --step 5     # Step5: 材料取込(SEC EDGAR+RSS+手動入力。allには未含有)
-  python -m src.main --step all   # 全ステップ(1→2→3→5は含まない→4)
+  python -m src.main --step 6     # Step6: 通知パイプライン(§13/§17/§18)
+  python -m src.main --step all   # 全ステップ(1→2→3→6→4、5材料取込は含まない)
 
 環境変数:
   FRED_API_KEY          : FRED APIキー (未設定時はFREDスキップ)
@@ -139,6 +140,27 @@ def run_step5() -> None:
     logger.info("=" * 60)
 
 
+def run_step6() -> None:
+    """Step6: 通知パイプライン(§13/§17/§18)。Step3完了後、Step4より前に実行する。
+
+    dip/sell閾値・実需指数/AIバブルスコアの変化・崩壊警戒LEVEL上昇・投資判断変化・
+    CAPEX急変を検知し outputs/notifications/notifications.jsonl へ登録する。
+    §13事後検証(backtests)のpending生成・期日到来分の評価も同時に行う。
+    `--step all` に含む(通知はStep3出力を読むだけの後段処理でクラッシュしても
+    Step4のレポート生成自体は独立して継続できるよう、内部で例外を握り潰す設計)。
+    """
+    logger.info("=" * 60)
+    logger.info("Step6: 通知パイプライン開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.notifications.pipeline import run_notifications
+    try:
+        run_notifications()
+    except Exception as exc:
+        logger.warning("通知パイプライン失敗(Step4は継続実行): %s", exc)
+    logger.info("=" * 60)
+
+
 def run_step4() -> None:
     """Step4: daily_report.md 生成 + Plotly ダッシュボード(PWA)出力。"""
     logger.info("=" * 60)
@@ -164,10 +186,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="先行指標監視システム")
     parser.add_argument(
         "--step",
-        choices=["1", "2", "3", "4", "5", "all"],
+        choices=["1", "2", "3", "4", "5", "6", "all"],
         default="1",
         help="実行するステップ (default: 1)。5(材料取込)は明示指定時のみ実行、"
-             "all には未含有(Phase6動作確認中のため)",
+             "all には未含有(Phase6動作確認中のため)。6(通知)はallに含む。"
+             "all の実行順は 1→2→3→6→4",
     )
     args = parser.parse_args()
 
@@ -185,6 +208,9 @@ def main() -> None:
 
     if args.step == "5":
         run_step5()
+
+    if args.step in ("6", "all"):
+        run_step6()
 
     if args.step in ("4", "all"):
         run_step4()

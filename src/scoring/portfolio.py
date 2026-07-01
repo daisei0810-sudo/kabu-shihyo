@@ -481,3 +481,8 @@ class PortfolioScorer:
                 "saved: %s | LEVEL%d (%d/%d項目悪化)",
                 watch_path, cw.level, cw.n_deteriorated, cw.n_monitorable,
             )
+            # 崩壊警戒LEVELの日次履歴(§17条件6「前回からLEVEL上昇」の検知に
+            # notifications パッケージが利用する。scoring側はnotificationsを
+            # importしない一方通行の依存だが、既存の score_history 機構を
+            # そのまま呼ぶだけなので scoring の責務の範囲内。
+            append_snapshot("collapse_level", float(cw.level), None)

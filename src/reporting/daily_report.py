@@ -37,6 +37,110 @@ def _icon(outlook: str) -> str:
     return "⚪"
 
 
+_TRIGGER_ICON: dict[str, str] = {
+    "dip": "🟢", "sell": "🔴", "demand_index": "🔵", "ai_bubble": "🟠",
+    "collapse": "🚨", "decision_change": "🟡", "capex": "🟣", "material": "📰",
+}
+
+
+def _section_notifications() -> list[str]:
+    """§17/§18: 本日の通知セクション(daily_report冒頭に配置)。
+
+    notifications.jsonl は Step6(通知パイプライン)が既に生成済みのものを読むだけ。
+    daily_report.py はMarkdown整形の責務のみを持つ(notifications→reportingの
+    一方向依存)。
+    """
+    lines: list[str] = ["## 🔔 本日の通知", ""]
+    try:
+        from src.notifications.store import load_notifications
+        notifications = [n for n in load_notifications() if n.status == "active"]
+    except Exception as exc:
+        logger.warning("notifications load failed: %s", exc)
+        lines += ["*通知データなし (Step6 未実行)*", ""]
+        return lines
+
+    lines[0] = f"## 🔔 本日の通知 ({len(notifications)}件)"
+    lines.append(
+        "> 変化のあった項目のみ表示。送信先(メール/Slack)は未実装のため、"
+        "本レポート内表示が通知の実体。"
+    )
+    lines.append("")
+
+    if not notifications:
+        lines.append(
+            "> 本日、通知条件を満たす変化はありませんでした。"
+            "(初回実行時は判断履歴が無いため判断変更通知は出ません＝正常)"
+        )
+        lines.append("")
+        return lines
+
+    for n in notifications:
+        icon = _TRIGGER_ICON.get(n.trigger_type, "🔔")
+        title = n.name_ja or n.target or n.trigger_type
+        if n.prev_judgment and n.curr_judgment:
+            headline = f"{icon} [{title}] 判断変更: {n.prev_judgment} → {n.curr_judgment}"
+        else:
+            headline = f"{icon} [{title}] {n.change_reason}"
+        lines.append(f"### {headline}")
+        lines.append("")
+        lines.append(f"- 通知日時: {n.notified_at}")
+        if n.change_confidence is not None:
+            lines.append(f"- 変更確信度(代理値): {n.change_confidence:.0f}")
+        lines.append(f"- 理由: {n.change_reason}")
+        if n.dip_score is not None or n.sell_score is not None:
+            lines.append(
+                f"- 押し目・売り時 ⚠️暫定版: dip={_fmt_score(n.dip_score)} "
+                f"/ sell={_fmt_score(n.sell_score)} / hold={_fmt_score(n.hold_score)} "
+                f"→ {n.dip_sell_decision or '--'}"
+            )
+        lines.append("")
+
+    lines.append(
+        "> 📭 材料連動の通知条件(顧客確認/ガイダンス修正/受注残変化/補助金確定)は、"
+        "対象となる材料データが未取得のため待機中です(未実装ではありません)。"
+    )
+    lines.append("")
+    return lines
+
+
+def _section_backtest_summary() -> list[str]:
+    lines: list[str] = ["## 事後検証サマリー (§13, 学習は行わない・表示のみ)", ""]
+    try:
+        from src.notifications.backtest_eval import summarize_backtests
+        from src.notifications.store import load_backtests
+        summary = summarize_backtests(load_backtests())
+    except Exception as exc:
+        logger.warning("backtest summary failed: %s", exc)
+        lines += ["*データなし (Step6 未実行)*", ""]
+        return lines
+
+    if summary.n_pending == 0 and summary.n_evaluated == 0:
+        lines += ["*通知がまだ無いため事後検証データもありません*", ""]
+        return lines
+
+    lines.append(
+        f"評価待ち **{summary.n_pending}件** / 評価済み **{summary.n_evaluated}件** "
+        f"/ データ欠損 **{summary.n_skipped}件**"
+    )
+    lines.append("")
+    if summary.n_evaluated > 0:
+        avg_val = summary.avg_excess_return
+        fpr_val = summary.false_positive_rate
+        avg = f"{avg_val*100:+.1f}%" if avg_val is not None else "--"
+        fpr = f"{fpr_val*100:.0f}%" if fpr_val is not None else "--"
+        lines.append(f"平均超過収益: {avg} / 誤検知率: {fpr}")
+        lines.append("")
+    if summary.next_due_date:
+        lines.append(f"> 次回評価予定日: {summary.next_due_date}")
+        lines.append("")
+    lines.append(
+        "> §14自動学習は評価済みbacktestが100件を超えるまで実装しない"
+        "(学習対象データが無い状態で学習器を書かない方針)。"
+    )
+    lines.append("")
+    return lines
+
+
 def _load_csv(name: str) -> pd.DataFrame | None:
     path = OUTPUT_DIR / name
     if not path.exists():
@@ -462,6 +566,8 @@ def generate_daily_report() -> str:
             "閾値は指示書15項目版の比率をスケールした事前固定値(バックテスト未実施)。"
         )
 
+    lines.extend(_section_notifications())
+
     lines.extend(_section_collapse_watch(
         collapse_df if collapse_df is not None else pd.DataFrame(), collapse_level, collapse_note
     ))
@@ -480,6 +586,7 @@ def generate_daily_report() -> str:
     lines.extend(_section_macro(macro_df if macro_df is not None else pd.DataFrame()))
     lines.extend(_section_technicals(tech_df if tech_df is not None else pd.DataFrame()))
     lines.extend(_section_dip_sell(ds_df if ds_df is not None else pd.DataFrame()))
+    lines.extend(_section_backtest_summary())
     lines.extend(_section_scorecard(sc_df if sc_df is not None else pd.DataFrame()))
     lines.extend(_section_data_quality())
 
