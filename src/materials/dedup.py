@@ -72,14 +72,15 @@ def _shared_key_numbers(a_text: str, b_text: str) -> bool:
     return bool(_extract_numbers(a_text) & _extract_numbers(b_text))
 
 
-def _has_new_material_fact(summary: str) -> bool:
-    text = summary.lower()
-    return any(kw.lower() in text for kw in _NEW_FACT_KEYWORDS)
+def has_new_fact_keywords(text: str) -> bool:
+    """新事実を示唆するキーワードを含むか(§6/§7の new_fact_flag 判定に共用)。"""
+    t = text.lower()
+    return any(kw.lower() in t for kw in _NEW_FACT_KEYWORDS)
 
 
 def classify_relation(new: MaterialDraft, old: Material) -> MaterialRelation:
     """新規材料が既存材料に対してどの関係かを分類する(§6)。"""
-    if _has_new_material_fact(new.summary):
+    if has_new_fact_keywords(new.summary):
         return MaterialRelation.UPDATE
     old_rank_order = RANK_ORDER.get(old.source_rank, RANK_ORDER["D"])
     new_rank_order = RANK_ORDER.get(new.source_rank.value, RANK_ORDER["D"])

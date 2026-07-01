@@ -82,6 +82,19 @@ def _normalize_company(company: str) -> str:
     return fallback or "UNKNOWNCO"
 
 
+def extract_company_alias(text: str) -> str | None:
+    """タイトル/サマリー中に既知企業の別名が含まれていれば、その別名文字列を返す。
+
+    RSS/SEC等の取込パイプラインで、材料に明示的な company フィールドが無い場合の
+    フォールバック抽出に使う。見つからなければ None(呼び出し側でソース名等に委譲)。
+    """
+    t = text.lower()
+    for alias in COMPANY_ALIASES:
+        if alias and alias in t:
+            return alias
+    return None
+
+
 def _classify_topic(title: str, summary: str = "") -> str:
     text = f"{title} {summary}".lower()
     best_topic: str | None = None

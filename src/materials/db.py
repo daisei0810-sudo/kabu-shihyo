@@ -54,6 +54,26 @@ def upsert_source(conn: sqlite3.Connection, s: Source) -> None:
     )
 
 
+def ensure_source_exists(conn: sqlite3.Connection, s: Source) -> None:
+    """source_id が未登録の場合のみ挿入する(既存の正確な登録を上書きしない安全弁)。
+
+    RSS設定(config/rss_sources.csv)等で正式登録される前に、取込パイプラインが
+    FK制約を満たすための最小限フォールバック登録に使う。
+    """
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO sources (
+            source_id, display_name, source_rank, source_type,
+            domain_pattern, is_customer_official, created_at
+        ) VALUES (?,?,?,?,?,?,?)
+        """,
+        (
+            s.source_id, s.display_name, s.source_rank, s.source_type,
+            s.domain_pattern, int(s.is_customer_official), s.created_at,
+        ),
+    )
+
+
 def list_sources(conn: sqlite3.Connection) -> list[Source]:
     rows = conn.execute("SELECT * FROM sources ORDER BY source_id").fetchall()
     results = []

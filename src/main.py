@@ -4,11 +4,14 @@
   python -m src.main              # Step1: データ取得のみ
   python -m src.main --step 2     # Step2: 有効性検証のみ
   python -m src.main --step 3     # Step3: スコアリングのみ
-  python -m src.main --step all   # 全ステップ
+  python -m src.main --step 5     # Step5: 材料取込(SEC EDGAR+RSS+手動入力。allには未含有)
+  python -m src.main --step all   # 全ステップ(1→2→3→5は含まない→4)
 
 環境変数:
-  FRED_API_KEY       : FRED APIキー (未設定時はFREDスキップ)
-  COINGECKO_API_KEY  : CoinGecko Demo APIキー (未設定時はyfinanceフォールバック)
+  FRED_API_KEY          : FRED APIキー (未設定時はFREDスキップ)
+  COINGECKO_API_KEY     : CoinGecko Demo APIキー (未設定時はyfinanceフォールバック)
+  SEC_EDGAR_USER_AGENT  : SEC EDGAR Fair Accessポリシー用の連絡先付きUser-Agent
+                          (例: "kabu-shihyo-tool your-email@example.com")
 """
 
 from __future__ import annotations
@@ -104,6 +107,38 @@ def run_step3() -> None:
     logger.info("=" * 60)
 
 
+def run_step5() -> None:
+    """Step5: 材料取込(SEC EDGAR + RSS + 手動入力)。Phase6 基盤。
+
+    ニュース/IR/政府発表を取込み、重複検知・鮮度判定を経て data/materials.db
+    (揮発キャッシュ) へ登録し、data/materials/*.jsonl(正本)へ書き戻す。
+    `--step all` にはまだ含めない: 日次自動実行(GitHub Actions)へ組み込む前に、
+    手動実行で実データに対する動作を確認すること。
+    """
+    logger.info("=" * 60)
+    logger.info("Step5: 材料取込開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.config import MATERIALS_DB, MATERIALS_DUMP_DIR, held_instruments
+    from src.materials.ingest import run_ingest
+
+    # SEC EDGARは米国上場企業のみ対象(.T等の日本ティッカーは対象外)。
+    us_company_queries = [
+        inst.name_ja for inst in held_instruments()
+        if inst.ticker and not inst.ticker.endswith(".T") and "-USD" not in inst.ticker
+    ]
+
+    counts = run_ingest(
+        db_path=MATERIALS_DB,
+        dump_dir=MATERIALS_DUMP_DIR,
+        company_queries=us_company_queries,
+        edgar_forms=["8-K", "10-Q", "10-K"],
+    )
+    logger.info("材料取込サマリ: SEC EDGAR=%d件 / RSS=%d件 / 手動=%d件",
+                counts.get("sec_edgar", 0), counts.get("rss", 0), counts.get("manual", 0))
+    logger.info("=" * 60)
+
+
 def run_step4() -> None:
     """Step4: daily_report.md 生成 + Plotly ダッシュボード(PWA)出力。"""
     logger.info("=" * 60)
@@ -129,9 +164,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="先行指標監視システム")
     parser.add_argument(
         "--step",
-        choices=["1", "2", "3", "4", "all"],
+        choices=["1", "2", "3", "4", "5", "all"],
         default="1",
-        help="実行するステップ (default: 1)",
+        help="実行するステップ (default: 1)。5(材料取込)は明示指定時のみ実行、"
+             "all には未含有(Phase6動作確認中のため)",
     )
     args = parser.parse_args()
 
@@ -146,6 +182,9 @@ def main() -> None:
 
     if args.step in ("3", "all"):
         run_step3()
+
+    if args.step == "5":
+        run_step5()
 
     if args.step in ("4", "all"):
         run_step4()

@@ -34,6 +34,7 @@ class MaterialDraft:
     related_tickers: list[str] = field(default_factory=list)
     affected_factors: list[str] = field(default_factory=list)
     is_customer_official: bool = False
+    company_hint: str | None = None  # 取得元が特定できる確実な発信元企業名(あれば優先使用)
 
 
 @dataclass
