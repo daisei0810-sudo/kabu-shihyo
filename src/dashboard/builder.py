@@ -256,6 +256,59 @@ def _make_technical_table(tech_df: pd.DataFrame) -> str:
                div_id="technical-table")
 
 
+def _make_dip_sell_table(ds_df: pd.DataFrame) -> str:
+    """押し目・売り時判定(簡易版)テーブル → plotly div 文字列。"""
+    if ds_df.empty or "target" not in ds_df.columns:
+        return "<p style='color:#888'>データなし (Step3 未実行)</p>"
+
+    _DECISION_COLOR: dict[str, str] = {
+        "強い押し目": "#00cc88",
+        "押し目候補": "#66bb66",
+        "保有継続":   "#888888",
+        "過熱警戒":   "#dd9900",
+        "売り時候補": "#cc3333",
+        "不明":       "#444444",
+    }
+
+    df = ds_df.copy()
+    names    = df.get("name_ja", df["target"]).tolist()
+    dips     = [_fmt(v, ".0f") for v in df.get("dip_score", pd.Series())]
+    sells    = [_fmt(v, ".0f") for v in df.get("sell_score", pd.Series())]
+    holds    = [_fmt(v, ".0f") for v in df.get("hold_score", pd.Series())]
+    decisions = df.get("decision", pd.Series(["--"] * len(df))).tolist()
+    actions   = df.get("recommended_action", pd.Series(["--"] * len(df))).tolist()
+
+    row_colors = [[_DECISION_COLOR.get(str(d), "#555555")] * 6 for d in decisions]
+    col_colors = list(map(list, zip(*row_colors, strict=False)))
+
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=["<b>銘柄</b>", "<b>dip_score</b>", "<b>sell_score</b>",
+                    "<b>hold_score</b>", "<b>判定</b>", "<b>推奨アクション</b>"],
+            fill_color="#1a2a3a",
+            font=dict(color="white", size=11),
+            align="left",
+            height=30,
+        ),
+        cells=dict(
+            values=[names, dips, sells, holds, decisions, actions],
+            fill_color=col_colors,
+            font=dict(color="white", size=11),
+            align=["left", "right", "right", "right", "left", "left"],
+            height=26,
+        ),
+    )])
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=max(180, len(df) * 28 + 50),
+        autosize=True,
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+               config={"responsive": True, "displayModeBar": False},
+               div_id="dip-sell-table")
+
+
 def _make_macro_section(macro_df: pd.DataFrame) -> str:
     """マクロ指標サマリー → HTML 文字列。"""
     if macro_df.empty:
@@ -474,6 +527,12 @@ _HTML_TEMPLATE = """\
 </div>
 
 <div class="section">
+  <h2>押し目・売り時判定 (簡易版・暫定)</h2>
+  <div class="warn">⚠️ 材料データ未反映の暫定版。テクニカル+Hard/Extendedスコアのみで近似。</div>
+  {dip_sell_div}
+</div>
+
+<div class="section">
   <h2>指標スコアカード</h2>
   {scorecard_div}
 </div>
@@ -513,11 +572,13 @@ def build_dashboard() -> None:
     sc_df       = _load_csv("indicator_scorecard.csv")
     tech_df     = _load_csv("technical_scores.csv")
     macro_df    = _load_csv("macro_indicators.csv")
+    ds_df       = _load_csv("dip_sell_scores.csv")
 
     portfolio_div = _make_portfolio_table(signals_df)
     xrp_div       = _make_xrp_gauges(signals_df)
     technical_div = _make_technical_table(tech_df)
     macro_div     = _make_macro_section(macro_df)
+    dip_sell_div  = _make_dip_sell_table(ds_df)
     scorecard_div = _make_scorecard_table(sc_df)
 
     html = _HTML_TEMPLATE.format(
@@ -527,6 +588,7 @@ def build_dashboard() -> None:
         xrp_div=xrp_div,
         technical_div=technical_div,
         macro_div=macro_div,
+        dip_sell_div=dip_sell_div,
         scorecard_div=scorecard_div,
     )
 

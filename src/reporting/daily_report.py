@@ -191,6 +191,47 @@ def _section_technicals(tech: pd.DataFrame) -> list[str]:
     return lines
 
 
+def _section_dip_sell(ds: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## 押し目・売り時判定 (簡易版・暫定)", ""]
+    lines.append(
+        "> ⚠️ 材料データ(ガイダンス修正・受注残変化等)は未反映の暫定版。"
+        "テクニカル指標(RSI/MA乖離)とHard/Extendedスコアのみで近似。"
+        "ニュース・材料監視の実装後に本判定へ置き換え予定。"
+    )
+    lines.append("")
+    if ds is None or ds.empty:
+        lines += ["*データなし (Step3 未実行)*", ""]
+        return lines
+
+    _DECISION_ICON: dict[str, str] = {
+        "強い押し目": "🟢",
+        "押し目候補": "🟡",
+        "保有継続":   "⚪",
+        "過熱警戒":   "🟠",
+        "売り時候補": "🔴",
+        "不明":       "❓",
+    }
+
+    def _icon(decision: str) -> str:
+        return _DECISION_ICON.get(decision, "⚪")
+
+    lines.append("| 銘柄 | dip_score | sell_score | hold_score | 判定 | 推奨アクション |")
+    lines.append("|------|----------:|-----------:|-----------:|------|---------------|")
+    for _, row in ds.iterrows():
+        dip  = _fmt_score(row.get("dip_score"))
+        sell = _fmt_score(row.get("sell_score"))
+        hold = _fmt_score(row.get("hold_score"))
+        dec  = str(row.get("decision", "--"))
+        icon = _icon(dec)
+        lines.append(
+            f"| {row.get('name_ja', row.get('target',''))} "
+            f"| {dip} | {sell} | {hold} "
+            f"| {icon} {dec} | {row.get('recommended_action', '--')} |"
+        )
+    lines.append("")
+    return lines
+
+
 def _section_scorecard(sc: pd.DataFrame) -> list[str]:
     lines: list[str] = ["## 有効性スコアカード (定常相関ベース)", ""]
 
@@ -264,6 +305,7 @@ def generate_daily_report() -> str:
     sc_df      = _load_csv("indicator_scorecard.csv")
     tech_df    = _load_csv("technical_scores.csv")
     macro_df   = _load_csv("macro_indicators.csv")
+    ds_df      = _load_csv("dip_sell_scores.csv")
 
     if signals_df is not None and not signals_df.empty:
         lines.extend(_section_portfolio(signals_df))
@@ -273,6 +315,7 @@ def generate_daily_report() -> str:
 
     lines.extend(_section_macro(macro_df if macro_df is not None else pd.DataFrame()))
     lines.extend(_section_technicals(tech_df if tech_df is not None else pd.DataFrame()))
+    lines.extend(_section_dip_sell(ds_df if ds_df is not None else pd.DataFrame()))
     lines.extend(_section_scorecard(sc_df if sc_df is not None else pd.DataFrame()))
     lines.extend(_section_data_quality())
 

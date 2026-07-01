@@ -24,6 +24,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.config import OUTPUTS, Layer, held_instruments
+from src.scoring.dip_sell import DipSellResult, compute_dip_sell
 from src.scoring.engine import AssetScore, ScoreEngine
 from src.scoring.technicals import MacroResult, TechnicalResult, compute_macro, compute_technicals
 from src.scoring.xrp_scores import XrpDemandResult, compute_xrp_lock_demand, compute_xrp_real_demand
@@ -60,6 +61,7 @@ class PortfolioResult:
     portfolio_extended_avg: float | None = None
     technicals: list[TechnicalResult] = field(default_factory=list)
     macro: MacroResult | None = None
+    dip_sell: list[DipSellResult] = field(default_factory=list)
 
 
 def _map_decision(
@@ -132,6 +134,7 @@ class PortfolioScorer:
         held = held_instruments()
         hard_scores: list[float] = []
         ext_scores: list[float] = []
+        asset_scores: dict[str, AssetScore] = {}
 
         for inst in held:
             if inst.key == "xrp":
@@ -139,6 +142,7 @@ class PortfolioScorer:
 
             try:
                 asset_score = self.engine.compute(inst.key)
+                asset_scores[inst.key] = asset_score
                 signal = self._to_signal(asset_score, inst.name_ja, inst.layer.value)
                 result.signals.append(signal)
                 if asset_score.hard_score is not None:
@@ -207,6 +211,12 @@ class PortfolioScorer:
             result.macro = compute_macro()
         except Exception as exc:
             logger.warning("macro failed: %s", exc)
+
+        # --- 押し目・売り時判定(簡易版・Phase8暫定) ---
+        try:
+            result.dip_sell = compute_dip_sell(result.technicals, asset_scores)
+        except Exception as exc:
+            logger.warning("dip_sell failed: %s", exc)
 
         return result
 
@@ -309,6 +319,26 @@ class PortfolioScorer:
             tech_path = OUTPUT_DIR / "technical_scores.csv"
             pd.DataFrame(tech_rows).to_csv(tech_path, index=False, encoding="utf-8-sig")
             logger.info("saved: %s (%d rows)", tech_path, len(tech_rows))
+
+        # --- 押し目・売り時判定 CSV (簡易版・Phase8暫定) ---
+        if result.dip_sell:
+            ds_rows = [
+                {
+                    "target": d.target,
+                    "name_ja": d.name_ja,
+                    "dip_score": d.dip_score,
+                    "sell_score": d.sell_score,
+                    "hold_score": d.hold_score,
+                    "decision": d.decision,
+                    "recommended_action": d.recommended_action,
+                    "reason": d.reason,
+                    "provisional": d.provisional,
+                }
+                for d in result.dip_sell
+            ]
+            ds_path = OUTPUT_DIR / "dip_sell_scores.csv"
+            pd.DataFrame(ds_rows).to_csv(ds_path, index=False, encoding="utf-8-sig")
+            logger.info("saved: %s (%d rows)", ds_path, len(ds_rows))
 
         # --- マクロ指標 CSV ---
         if result.macro:
