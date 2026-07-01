@@ -223,7 +223,6 @@ def _make_technical_table(tech_df: pd.DataFrame) -> str:
     dev200s  = [f"{float(v):+.1f}%" if pd.notna(v) else "--"
                 for v in df.get("ma200_dev", pd.Series())]
     outlooks = df.get("tech_outlook", pd.Series(["--"] * len(df))).tolist()
-    notes    = [str(v)[:40] for v in df.get("tech_note", pd.Series())]
 
     row_colors = [[_tech_color(str(o))] * 5 for o in outlooks]
     col_colors = list(map(list, zip(*row_colors, strict=False)))

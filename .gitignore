@@ -37,6 +37,11 @@ Thumbs.db
 # データ（生データは容量大・GitHub Pages 不要）
 data/raw/
 
+# 材料DB（正本は data/materials/*.jsonl。SQLiteは実行毎に再構築される揮発キャッシュ）
+data/materials.db
+data/materials.db-journal
+data/materials.db-wal
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

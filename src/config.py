@@ -276,6 +276,11 @@ DATA_PROCESSED = "data/processed"
 OUTPUTS = "outputs"
 CHARTS = "outputs/charts"
 
+# 材料DB(Phase5) — 正本は MATERIALS_DUMP_DIR 配下の JSONL。
+# MATERIALS_DB は実行毎に JSONL から再構築される揮発キャッシュ(gitignore対象)。
+MATERIALS_DB = "data/materials.db"
+MATERIALS_DUMP_DIR = "data/materials"
+
 # データ取得履歴の最大遡及(暦日)
 HISTORY_DAYS = 365 * 5
 
