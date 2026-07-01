@@ -27,23 +27,15 @@ from pathlib import Path
 import pandas as pd
 
 from src.config import DATA_PROCESSED, XRP_LOCK_DEMAND_STAGES
-from src.scoring.normalizer import score_from_series
+from src.scoring.components import ComponentScore, aggregate_components, make_component_from_series
 
 logger = logging.getLogger(__name__)
 
 PROCESSED_DIR = Path(DATA_PROCESSED)
 
-
-@dataclass
-class XrpComponentScore:
-    """XRPスコアの1コンポーネント。"""
-
-    name: str
-    score: float | None       # 0–100, None = 取得不可
-    weight: float             # 理論重み(分母を含む全コンポーネントで合計定義)
-    available: bool
-    data_quality: str         # "verified" / "unavailable"
-    note: str = ""
+# 後方互換エイリアス(既存の公開API・テストが参照する名前を維持)。
+# 実体は src/scoring/components.py の汎用 ComponentScore と同一構造。
+XrpComponentScore = ComponentScore
 
 
 @dataclass
@@ -86,22 +78,12 @@ def _make_component(
     weight: float,
     note: str = "",
 ) -> XrpComponentScore:
-    """系列と最新値からコンポーネントを作る。データなしは available=False。"""
-    if series is None or latest is None:
-        return XrpComponentScore(
-            name=name, score=None, weight=weight,
-            available=False, data_quality="verified",
-            note=note or "データファイルなし",
-        )
-    score_val, method_note = score_from_series(series, latest)
-    full_note = f"{note} [{method_note}]" if note else method_note
-    return XrpComponentScore(
-        name=name,
-        score=score_val,
-        weight=weight,
-        available=score_val is not None,
-        data_quality="verified",
-        note=full_note,
+    """系列と最新値からコンポーネントを作る。データなしは available=False。
+
+    実装は src/scoring/components.py の汎用版に委譲(挙動不変)。
+    """
+    return make_component_from_series(
+        name, series, latest, weight, data_quality="verified", note=note
     )
 
 
@@ -112,37 +94,15 @@ def _aggregate_components(
     """コンポーネントリストから総合スコアと confidence を計算。
 
     confidence = 利用可能重み / 全重み合計 (unavailable が分母に入ることで自然に低下)。
+    実装は src/scoring/components.py の汎用版に委譲(挙動不変)。
     """
-    available = [c for c in components if c.available and c.score is not None]
-    total_weight = sum(c.weight for c in components)
-    avail_weight = sum(c.weight for c in available)
-
-    if not available or avail_weight == 0:
-        return XrpDemandResult(
-            score=None,
-            confidence_pct=0.0,
-            data_coverage_pct=0.0,
-            components=components,
-            note=f"{label}: 利用可能データなし",
-        )
-
-    weighted_sum = sum(
-        c.score * c.weight for c in available if c.score is not None
-    )
-    score = weighted_sum / avail_weight
-
-    confidence = avail_weight / total_weight if total_weight > 0 else 0.0
-
-    verified_avail = sum(
-        1 for c in components if c.available and c.data_quality == "verified"
-    )
-    data_coverage = verified_avail / len(components) if components else 0.0
-
+    agg = aggregate_components(components, label)
     return XrpDemandResult(
-        score=round(score, 1),
-        confidence_pct=round(confidence, 3),
-        data_coverage_pct=round(data_coverage, 3),
-        components=components,
+        score=agg.score,
+        confidence_pct=agg.confidence_pct,
+        data_coverage_pct=agg.data_coverage_pct,
+        components=agg.components,
+        note=agg.note,
     )
 
 

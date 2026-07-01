@@ -24,8 +24,17 @@ from pathlib import Path
 import pandas as pd
 
 from src.config import OUTPUTS, Layer, held_instruments
+from src.scoring.collapse_watch import CollapseWatchResult, compute_collapse_watch
+from src.scoring.cycle_scores import CycleScore, compute_cycle_scores
+from src.scoring.demand_index import (
+    DemandIndexResult,
+    compute_ai_bubble_score,
+    compute_divergence,
+    compute_real_demand_index,
+)
 from src.scoring.dip_sell import DipSellResult, compute_dip_sell
 from src.scoring.engine import AssetScore, ScoreEngine
+from src.scoring.score_history import append_snapshot, compute_all_changes
 from src.scoring.technicals import MacroResult, TechnicalResult, compute_macro, compute_technicals
 from src.scoring.xrp_scores import XrpDemandResult, compute_xrp_lock_demand, compute_xrp_real_demand
 
@@ -62,6 +71,11 @@ class PortfolioResult:
     technicals: list[TechnicalResult] = field(default_factory=list)
     macro: MacroResult | None = None
     dip_sell: list[DipSellResult] = field(default_factory=list)
+    real_demand_index: DemandIndexResult | None = None
+    ai_bubble_score: DemandIndexResult | None = None
+    bubble_demand_divergence: float | None = None
+    cycle_scores: list[CycleScore] = field(default_factory=list)
+    collapse_watch: CollapseWatchResult | None = None
 
 
 def _map_decision(
@@ -218,6 +232,28 @@ class PortfolioScorer:
         except Exception as exc:
             logger.warning("dip_sell failed: %s", exc)
 
+        # --- 実需指数 + AIバブルスコア + 乖離(Phase7) ---
+        try:
+            result.real_demand_index = compute_real_demand_index()
+            result.ai_bubble_score = compute_ai_bubble_score()
+            result.bubble_demand_divergence = compute_divergence(
+                result.real_demand_index, result.ai_bubble_score
+            )
+        except Exception as exc:
+            logger.warning("demand_index/ai_bubble failed: %s", exc)
+
+        # --- サイクルスコア群(Phase7) ---
+        try:
+            result.cycle_scores = compute_cycle_scores()
+        except Exception as exc:
+            logger.warning("cycle_scores failed: %s", exc)
+
+        # --- AIサイクル崩壊先行警戒(§11, Phase7) ---
+        try:
+            result.collapse_watch = compute_collapse_watch()
+        except Exception as exc:
+            logger.warning("collapse_watch failed: %s", exc)
+
         return result
 
     def _to_signal(
@@ -354,3 +390,94 @@ class PortfolioScorer:
                 "generated_at": datetime.now().isoformat(),
             }]).to_csv(macro_path, index=False, encoding="utf-8-sig")
             logger.info("saved: %s", macro_path)
+
+        # --- 実需指数 + AIバブルスコア + 乖離 CSV(Phase7) ---
+        if result.real_demand_index is not None or result.ai_bubble_score is not None:
+            demand_rows = []
+            for di in (result.real_demand_index, result.ai_bubble_score):
+                if di is None:
+                    continue
+                append_snapshot(di.label, di.score, di.confidence_pct)
+                changes = compute_all_changes(di.label, di.score)
+                demand_rows.append({
+                    "label": di.label,
+                    "score": di.score,
+                    "confidence_pct": di.confidence_pct,
+                    "data_coverage_pct": di.data_coverage_pct,
+                    "change_1d": changes["change_1d"],
+                    "change_1w": changes["change_1w"],
+                    "change_1m": changes["change_1m"],
+                    "note": di.note,
+                })
+            demand_path = OUTPUT_DIR / "demand_index_scores.csv"
+            pd.DataFrame(demand_rows).to_csv(demand_path, index=False, encoding="utf-8-sig")
+            logger.info("saved: %s (%d rows)", demand_path, len(demand_rows))
+
+            comp_rows = []
+            for di in (result.real_demand_index, result.ai_bubble_score):
+                if di is None:
+                    continue
+                for c in di.components:
+                    comp_rows.append({
+                        "label": di.label,
+                        "component": c.name,
+                        "score": c.score,
+                        "weight": c.weight,
+                        "available": c.available,
+                        "data_quality": c.data_quality,
+                        "note": c.note,
+                    })
+            if comp_rows:
+                comp_path = OUTPUT_DIR / "demand_index_components.csv"
+                pd.DataFrame(comp_rows).to_csv(comp_path, index=False, encoding="utf-8-sig")
+                logger.info("saved: %s (%d rows)", comp_path, len(comp_rows))
+
+            if result.bubble_demand_divergence is not None:
+                logger.info(
+                    "実需指数=%s AIバブルスコア=%s 乖離=%+.1f",
+                    result.real_demand_index.score if result.real_demand_index else None,
+                    result.ai_bubble_score.score if result.ai_bubble_score else None,
+                    result.bubble_demand_divergence,
+                )
+
+        # --- サイクルスコア CSV(Phase7) ---
+        if result.cycle_scores:
+            cycle_rows = []
+            for cs in result.cycle_scores:
+                append_snapshot(f"cycle_{cs.key}", cs.score, cs.confidence_pct)
+                changes = compute_all_changes(f"cycle_{cs.key}", cs.score)
+                cycle_rows.append({
+                    "key": cs.key,
+                    "name_ja": cs.name_ja,
+                    "score": cs.score,
+                    "confidence_pct": cs.confidence_pct,
+                    "n_constituents": cs.n_constituents,
+                    "n_available": cs.n_available,
+                    "reference_only": cs.reference_only,
+                    "change_1d": changes["change_1d"],
+                    "change_1w": changes["change_1w"],
+                    "change_1m": changes["change_1m"],
+                    "note": cs.note,
+                })
+            cycle_path = OUTPUT_DIR / "cycle_scores.csv"
+            pd.DataFrame(cycle_rows).to_csv(cycle_path, index=False, encoding="utf-8-sig")
+            logger.info("saved: %s (%d rows)", cycle_path, len(cycle_rows))
+
+        # --- AIサイクル崩壊先行警戒 CSV(§11, Phase7) ---
+        if result.collapse_watch is not None:
+            cw = result.collapse_watch
+            watch_rows = [
+                {
+                    "name": item.name,
+                    "deteriorated": item.deteriorated,
+                    "value_note": item.value_note,
+                    "available": item.available,
+                }
+                for item in cw.items
+            ]
+            watch_path = OUTPUT_DIR / "collapse_watch.csv"
+            pd.DataFrame(watch_rows).to_csv(watch_path, index=False, encoding="utf-8-sig")
+            logger.info(
+                "saved: %s | LEVEL%d (%d/%d項目悪化)",
+                watch_path, cw.level, cw.n_deteriorated, cw.n_monitorable,
+            )

@@ -191,6 +191,142 @@ def _section_technicals(tech: pd.DataFrame) -> list[str]:
     return lines
 
 
+_COLLAPSE_LEVEL_ICON: dict[int, str] = {0: "🟢", 1: "🟡", 2: "🟠", 3: "🔴"}
+
+_HOLDINGS_NAME_JA: dict[str, str] = {
+    "fujikura": "フジクラ", "lasertec_rorze": "ローツェ", "kioxia": "キオクシア",
+    "advantest": "アドバンテスト", "towa": "TOWA", "shibaura": "芝浦メカトロニクス",
+    "murata": "村田製作所",
+}
+
+
+def _section_collapse_watch(cw: pd.DataFrame, level: int | None, note: str) -> list[str]:
+    lines: list[str] = ["## ⚠️ AIサイクル崩壊先行警戒 (§11)", ""]
+    if cw is None or cw.empty or level is None:
+        lines += ["*データなし (Step3 未実行)*", ""]
+        return lines
+
+    icon = _COLLAPSE_LEVEL_ICON.get(level, "❓")
+    n_det = int(cw["deteriorated"].sum()) if "deteriorated" in cw.columns else 0
+    lines.append(f"### {icon} LEVEL{level} ({n_det}/{len(cw)}項目 悪化)")
+    lines.append("")
+    lines.append("| 監視項目 | 判定 | 詳細 |")
+    lines.append("|---------|:----:|------|")
+    for _, row in cw.iterrows():
+        det = row.get("deteriorated")
+        if pd.isna(det):
+            mark = "❓"
+        else:
+            mark = "🔴悪化" if bool(det) else "🟢正常"
+        lines.append(f"| {row.get('name','--')} | {mark} | {row.get('value_note','')} |")
+    lines.append("")
+    if note:
+        lines.append(f"> {note}")
+        lines.append("")
+
+    if level >= 3:
+        holdings = ", ".join(_HOLDINGS_NAME_JA.get(k, k) for k in _HOLDINGS_NAME_JA)
+        lines.append(
+            f"> 🔴 **LEVEL3到達 — 保有7銘柄の強制再評価を推奨**: {holdings}"
+        )
+        lines.append("")
+    return lines
+
+
+def _section_demand_index(demand: pd.DataFrame, components: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## 実需指数 / AIバブルスコア", ""]
+    if demand is None or demand.empty:
+        lines += ["*データなし (Step3 未実行)*", ""]
+        return lines
+
+    def _chg(v: object) -> str:
+        try:
+            f = float(v)  # type: ignore[arg-type]
+            return f"{f:+.1f}" if not pd.isna(f) else "履歴蓄積中"
+        except (TypeError, ValueError):
+            return "履歴蓄積中"
+
+    lines.append("| 指標 | スコア | Confidence | 変化(1日/1週/1月) |")
+    lines.append("|------|-------:|:----------:|-------------------|")
+    for _, row in demand.iterrows():
+        label = "実需指数" if row.get("label") == "real_demand_index" else "AIバブルスコア"
+        chg = (
+            f"{_chg(row.get('change_1d'))} / "
+            f"{_chg(row.get('change_1w'))} / {_chg(row.get('change_1m'))}"
+        )
+        lines.append(
+            f"| {label} | {_fmt_score(row.get('score'))} "
+            f"| {_fmt_pct(row.get('confidence_pct'))} | {chg} |"
+        )
+
+    real_row = demand[demand["label"] == "real_demand_index"]
+    bubble_row = demand[demand["label"] == "ai_bubble_score"]
+    if not real_row.empty and not bubble_row.empty:
+        r_score = real_row.iloc[0].get("score")
+        b_score = bubble_row.iloc[0].get("score")
+        if pd.notna(r_score) and pd.notna(b_score):
+            divergence = float(b_score) - float(r_score)
+            interp = (
+                "株価が実需を大きく先行(バブル警戒)" if divergence > 20
+                else "実需が株価に未織り込み(割安の可能性)" if divergence < -20
+                else "実需とバブルスコアは概ね整合"
+            )
+            lines.append("")
+            lines.append(f"**乖離(AIバブル−実需) = {divergence:+.1f}** — {interp}")
+    lines.append("")
+
+    if components is not None and not components.empty:
+        lines.append("<details><summary>構成要素の内訳</summary>")
+        lines.append("")
+        for label_key, label_ja in [
+            ("real_demand_index", "実需指数"), ("ai_bubble_score", "AIバブルスコア"),
+        ]:
+            sub = components[components["label"] == label_key]
+            if sub.empty:
+                continue
+            lines.append(f"**{label_ja}**")
+            lines.append("")
+            lines.append("| 構成要素 | スコア | 重み | 品質 |")
+            lines.append("|---------|-------:|-----:|------|")
+            for _, row in sub.iterrows():
+                avail = row.get("available")
+                score_disp = _fmt_score(row.get("score")) if avail else "取得不可"
+                lines.append(
+                    f"| {row.get('component','')} | {score_disp} "
+                    f"| {row.get('weight',0):.2f} | {row.get('data_quality','')} |"
+                )
+            lines.append("")
+        lines.append("</details>")
+        lines.append("")
+
+    return lines
+
+
+def _section_cycle_scores(cycles: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## サイクルスコア (AI/光通信/量子/ロボティクス/CoWoS/HBM)", ""]
+    if cycles is None or cycles.empty:
+        lines += ["*データなし (Step3 未実行)*", ""]
+        return lines
+
+    lines.append("| サイクル | スコア | Confidence | 構成銘柄 | 備考 |")
+    lines.append("|---------|-------:|:----------:|:--------:|------|")
+    for _, row in cycles.iterrows():
+        ref = "⚠️参考値" if bool(row.get("reference_only")) else ""
+        lines.append(
+            f"| {row.get('name_ja','')} {ref} | {_fmt_score(row.get('score'))} "
+            f"| {_fmt_pct(row.get('confidence_pct'))} "
+            f"| {row.get('n_available',0)}/{row.get('n_constituents',0)} "
+            f"| {str(row.get('note',''))[:60]} |"
+        )
+    lines.append("")
+    lines.append(
+        "> ⚠️参考値 = 単一銘柄proxyのみ(CoWoS/HBM)。confidence上限30%にキャップ済み。"
+        " 電力設備サイクルは対象銘柄がユニバースに無いため実装せず(unavailable)。"
+    )
+    lines.append("")
+    return lines
+
+
 def _section_dip_sell(ds: pd.DataFrame) -> list[str]:
     lines: list[str] = ["## 押し目・売り時判定 (簡易版・暫定)", ""]
     lines.append(
@@ -301,11 +437,34 @@ def generate_daily_report() -> str:
         "",
     ]
 
-    signals_df = _load_csv("portfolio_signal_scores.csv")
-    sc_df      = _load_csv("indicator_scorecard.csv")
-    tech_df    = _load_csv("technical_scores.csv")
-    macro_df   = _load_csv("macro_indicators.csv")
-    ds_df      = _load_csv("dip_sell_scores.csv")
+    signals_df    = _load_csv("portfolio_signal_scores.csv")
+    sc_df         = _load_csv("indicator_scorecard.csv")
+    tech_df       = _load_csv("technical_scores.csv")
+    macro_df      = _load_csv("macro_indicators.csv")
+    ds_df         = _load_csv("dip_sell_scores.csv")
+    collapse_df   = _load_csv("collapse_watch.csv")
+    demand_df     = _load_csv("demand_index_scores.csv")
+    components_df = _load_csv("demand_index_components.csv")
+    cycles_df     = _load_csv("cycle_scores.csv")
+
+    collapse_level = None
+    collapse_note = ""
+    if collapse_df is not None and not collapse_df.empty and "deteriorated" in collapse_df.columns:
+        n_det = int(collapse_df["deteriorated"].fillna(False).astype(bool).sum())
+        from src.scoring.collapse_watch import LEVEL_THRESHOLDS
+        collapse_level = 0
+        for lv in (3, 2, 1):
+            if n_det >= LEVEL_THRESHOLDS[lv]:
+                collapse_level = lv
+                break
+        collapse_note = (
+            f"監視可能{len(collapse_df)}項目中{n_det}項目が悪化。"
+            "閾値は指示書15項目版の比率をスケールした事前固定値(バックテスト未実施)。"
+        )
+
+    lines.extend(_section_collapse_watch(
+        collapse_df if collapse_df is not None else pd.DataFrame(), collapse_level, collapse_note
+    ))
 
     if signals_df is not None and not signals_df.empty:
         lines.extend(_section_portfolio(signals_df))
@@ -313,6 +472,11 @@ def generate_daily_report() -> str:
     else:
         lines += ["*portfolio_signal_scores.csv なし (Step3 未実行)*", ""]
 
+    lines.extend(_section_demand_index(
+        demand_df if demand_df is not None else pd.DataFrame(),
+        components_df if components_df is not None else pd.DataFrame(),
+    ))
+    lines.extend(_section_cycle_scores(cycles_df if cycles_df is not None else pd.DataFrame()))
     lines.extend(_section_macro(macro_df if macro_df is not None else pd.DataFrame()))
     lines.extend(_section_technicals(tech_df if tech_df is not None else pd.DataFrame()))
     lines.extend(_section_dip_sell(ds_df if ds_df is not None else pd.DataFrame()))

@@ -1,3 +1,12 @@
+from src.scoring.collapse_watch import CollapseWatchResult, WatchItem, compute_collapse_watch
+from src.scoring.components import AggregateResult, ComponentScore, aggregate_components
+from src.scoring.cycle_scores import CycleScore, compute_cycle_scores
+from src.scoring.demand_index import (
+    DemandIndexResult,
+    compute_ai_bubble_score,
+    compute_divergence,
+    compute_real_demand_index,
+)
 from src.scoring.dip_sell import (
     DipSellResult,
     calculate_dip_score,
@@ -41,4 +50,16 @@ __all__ = [
     "XrpDemandResult",
     "compute_xrp_lock_demand",
     "compute_xrp_real_demand",
+    "ComponentScore",
+    "AggregateResult",
+    "aggregate_components",
+    "CycleScore",
+    "compute_cycle_scores",
+    "DemandIndexResult",
+    "compute_real_demand_index",
+    "compute_ai_bubble_score",
+    "compute_divergence",
+    "CollapseWatchResult",
+    "WatchItem",
+    "compute_collapse_watch",
 ]

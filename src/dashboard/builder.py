@@ -308,6 +308,145 @@ def _make_dip_sell_table(ds_df: pd.DataFrame) -> str:
                div_id="dip-sell-table")
 
 
+_COLLAPSE_LEVEL_COLOR: dict[int, str] = {
+    0: "#00cc66", 1: "#ddaa00", 2: "#dd7700", 3: "#cc3333",
+}
+
+
+def _make_collapse_watch_banner(watch_df: pd.DataFrame) -> str:
+    """AIサイクル崩壊先行警戒バナー(§11) → HTML文字列。"""
+    if watch_df.empty or "deteriorated" not in watch_df.columns:
+        return "<p style='color:#888'>データなし (Step3 未実行)</p>"
+
+    n_det = int(watch_df["deteriorated"].fillna(False).astype(bool).sum())
+    n_total = len(watch_df)
+
+    from src.scoring.collapse_watch import LEVEL_THRESHOLDS
+    level = 0
+    for lv in (3, 2, 1):
+        if n_det >= LEVEL_THRESHOLDS[lv]:
+            level = lv
+            break
+    color = _COLLAPSE_LEVEL_COLOR.get(level, "#555")
+
+    item_parts: list[str] = []
+    for _, row in watch_df.iterrows():
+        is_bad = bool(row.get("deteriorated"))
+        item_color = "#ff6666" if is_bad else "#7fd97f"
+        item_mark = "🔴" if is_bad else "🟢"
+        item_parts.append(
+            f"<div style='padding:2px 0;color:{item_color}'>"
+            f"{item_mark} {row.get('name', '')}: {row.get('value_note', '')}</div>"
+        )
+    items_html = "".join(item_parts)
+
+    return (
+        f"<div style='background:#1a2a3a;border-radius:6px;padding:12px 16px;"
+        f"border-left:4px solid {color}'>"
+        f"<div style='color:{color};font-size:1.4rem;font-weight:bold'>"
+        f"LEVEL{level} ({n_det}/{n_total}項目 悪化)</div>"
+        f"<div style='margin-top:6px;font-size:0.8rem'>{items_html}</div>"
+        f"</div>"
+    )
+
+
+def _make_demand_index_gauges(demand_df: pd.DataFrame) -> str:
+    """実需指数・AIバブルスコアのゲージ → plotly div 文字列。"""
+    if demand_df.empty:
+        return "<p style='color:#888'>データなし (Step3 未実行)</p>"
+
+    real_row = demand_df[demand_df["label"] == "real_demand_index"]
+    bubble_row = demand_df[demand_df["label"] == "ai_bubble_score"]
+
+    def get_score(row: pd.DataFrame) -> float | None:
+        if row.empty:
+            return None
+        v = row.iloc[0].get("score")
+        try:
+            f = float(v)  # noqa: PGH003
+            return None if pd.isna(f) else f
+        except (TypeError, ValueError):
+            return None
+
+    real_score = get_score(real_row)
+    bubble_score = get_score(bubble_row)
+
+    fig = go.Figure()
+    for score, name, col, xdom in [
+        (real_score, "実需指数", "#7eb3ff", [0, 0.48]),
+        (bubble_score, "AIバブルスコア", "#ffb37e", [0.52, 1.0]),
+    ]:
+        fig.add_trace(go.Indicator(
+            mode="gauge+number",
+            value=score if score is not None else 0,
+            title={"text": name, "font": {"size": 13}},
+            number={"suffix": "/100", "font": {"size": 20}},
+            gauge={
+                "axis": {"range": [0, 100], "tickcolor": "#aaa"},
+                "bar": {"color": col, "thickness": 0.25},
+                "bgcolor": "#1a2a3a",
+                "bordercolor": "#334",
+                "threshold": {
+                    "line": {"color": "gold", "width": 3},
+                    "value": score if score is not None else 0,
+                },
+            },
+            domain={"x": xdom, "y": [0, 1]},
+        ))
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        font={"color": "#e0e0e0"},
+        height=220,
+        margin=dict(l=8, r=8, t=40, b=4),
+        autosize=True,
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+               config={"responsive": True, "displayModeBar": False}, div_id="demand-index-gauges")
+
+
+def _make_cycle_scores_table(cycles_df: pd.DataFrame) -> str:
+    """サイクルスコアテーブル → plotly div 文字列。"""
+    if cycles_df.empty:
+        return "<p style='color:#888'>データなし (Step3 未実行)</p>"
+
+    df = cycles_df.copy()
+    names = df.get("name_ja", pd.Series()).tolist()
+    scores = [_fmt(v, ".0f") for v in df.get("score", pd.Series())]
+    confs = [f"{float(v)*100:.0f}%" if pd.notna(v) else "--"
+             for v in df.get("confidence_pct", pd.Series())]
+    refs = ["⚠️参考値" if bool(v) else "" for v in df.get("reference_only", pd.Series())]
+
+    row_colors = [
+        ["#dd9900" if r else "#1a2a3a"] * 4 for r in df.get("reference_only", pd.Series())
+    ]
+    col_colors = list(map(list, zip(*row_colors, strict=False))) if row_colors else None
+
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=["<b>サイクル</b>", "<b>スコア</b>", "<b>Confidence</b>", "<b></b>"],
+            fill_color="#1a2a3a",
+            font=dict(color="white", size=11),
+            align="left",
+            height=30,
+        ),
+        cells=dict(
+            values=[names, scores, confs, refs],
+            fill_color=col_colors if col_colors else "#0e1117",
+            font=dict(color="white", size=11),
+            align=["left", "right", "center", "left"],
+            height=26,
+        ),
+    )])
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=max(180, len(df) * 28 + 50),
+        autosize=True,
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+               config={"responsive": True, "displayModeBar": False}, div_id="cycle-scores-table")
+
+
 def _make_macro_section(macro_df: pd.DataFrame) -> str:
     """マクロ指標サマリー → HTML 文字列。"""
     if macro_df.empty:
@@ -506,6 +645,11 @@ _HTML_TEMPLATE = """\
 </div>
 
 <div class="section">
+  <h2>⚠️ AIサイクル崩壊先行警戒</h2>
+  {collapse_watch_div}
+</div>
+
+<div class="section">
   <h2>ポートフォリオ シグナル</h2>
   {portfolio_div}
 </div>
@@ -513,6 +657,16 @@ _HTML_TEMPLATE = """\
 <div class="section">
   <h2>XRP 需要スコア</h2>
   {xrp_div}
+</div>
+
+<div class="section">
+  <h2>実需指数 / AIバブルスコア</h2>
+  {demand_index_div}
+</div>
+
+<div class="section">
+  <h2>サイクルスコア</h2>
+  {cycle_scores_div}
 </div>
 
 <div class="section">
@@ -572,6 +726,9 @@ def build_dashboard() -> None:
     tech_df     = _load_csv("technical_scores.csv")
     macro_df    = _load_csv("macro_indicators.csv")
     ds_df       = _load_csv("dip_sell_scores.csv")
+    collapse_df = _load_csv("collapse_watch.csv")
+    demand_df   = _load_csv("demand_index_scores.csv")
+    cycles_df   = _load_csv("cycle_scores.csv")
 
     portfolio_div = _make_portfolio_table(signals_df)
     xrp_div       = _make_xrp_gauges(signals_df)
@@ -579,6 +736,9 @@ def build_dashboard() -> None:
     macro_div     = _make_macro_section(macro_df)
     dip_sell_div  = _make_dip_sell_table(ds_df)
     scorecard_div = _make_scorecard_table(sc_df)
+    collapse_watch_div = _make_collapse_watch_banner(collapse_df)
+    demand_index_div   = _make_demand_index_gauges(demand_df)
+    cycle_scores_div   = _make_cycle_scores_table(cycles_df)
 
     html = _HTML_TEMPLATE.format(
         plotly_cdn=PLOTLY_CDN,
@@ -589,6 +749,9 @@ def build_dashboard() -> None:
         macro_div=macro_div,
         dip_sell_div=dip_sell_div,
         scorecard_div=scorecard_div,
+        collapse_watch_div=collapse_watch_div,
+        demand_index_div=demand_index_div,
+        cycle_scores_div=cycle_scores_div,
     )
 
     # index.html (GitHub Pages のルートとして配信)
