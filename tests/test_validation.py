@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -247,3 +249,123 @@ class TestIndicatorRanker:
         assert not sc.iloc[0]["trend_confound"]
         assert sc.iloc[0]["rank"] in ("A+", "A", "B")
         assert sc.iloc[0]["adopted"]
+
+    def test_monthly_freq_further_downgrades_effective_n(self) -> None:
+        # 同じn_obs/lag/horizonでも freq="monthly" は実効Nをさらに/21するため
+        # daily版よりinsufficient_historyになりやすい
+        ranker = IndicatorRanker()
+        lag_df = self._make_lag_df(0.5, 0.5, n_obs=300, lag=30, horizon=30)
+        event_df = self._make_event_df(hit_rate=0.65, n_events=15, horizon=30)
+        sc_daily = ranker.build_scorecard(
+            lag_df, event_df, "ind", "asset", "verified", 1.0, freq="daily"
+        )
+        sc_monthly = ranker.build_scorecard(
+            lag_df, event_df, "ind", "asset", "verified", 1.0, freq="monthly"
+        )
+        assert sc_monthly.iloc[0]["effective_n"] < sc_daily.iloc[0]["effective_n"]
+
+    def test_scorecard_includes_spearman_p_raw_and_freq_columns(self) -> None:
+        ranker = IndicatorRanker()
+        lag_df = self._make_lag_df(0.5, 0.5, n_obs=300, lag=7, horizon=30)
+        event_df = self._make_event_df(hit_rate=0.65, n_events=15, horizon=30)
+        sc = ranker.build_scorecard(lag_df, event_df, "ind", "asset", "verified", 1.0)
+        assert "spearman_p_raw" in sc.columns
+        assert "freq" in sc.columns
+        assert sc.iloc[0]["freq"] == "daily"
+
+
+class TestGlobalFdrCorrection:
+    def _row(self, indicator: str, target: str, rank: str, p_raw: float) -> dict[str, object]:
+        return {
+            "indicator": indicator, "target": target, "rank": rank,
+            "adopted": rank in ("A+", "A", "B"), "spearman_p_raw": p_raw,
+            "confidence_note": "OK",
+        }
+
+    def test_empty_dataframe_returns_unchanged(self) -> None:
+        result = IndicatorRanker.apply_global_fdr_correction(pd.DataFrame())
+        assert result.empty
+
+    def test_missing_p_raw_column_returns_unchanged(self) -> None:
+        df = pd.DataFrame([{"indicator": "x", "target": "y", "rank": "B"}])
+        result = IndicatorRanker.apply_global_fdr_correction(df)
+        assert "q_spearman_global" not in result.columns
+
+    def test_significant_p_values_not_downgraded(self) -> None:
+        df = pd.DataFrame([
+            self._row("a", "t1", "A", 0.0001),
+            self._row("b", "t2", "B", 0.0005),
+        ])
+        result = IndicatorRanker.apply_global_fdr_correction(df)
+        assert set(result["rank"]) == {"A", "B"}
+
+    def test_many_weak_pvalues_cause_downgrade(self) -> None:
+        # 大量の弱いp値(多重検定バイアスの典型)に紛れた1件のB評価を、
+        # グローバル補正がCへ降格させることを確認する。
+        rows = [self._row(f"noise{i}", f"t{i}", "D", 0.4 + i * 0.01) for i in range(20)]
+        rows.append(self._row("maybe_real", "t_real", "B", 0.045))
+        df = pd.DataFrame(rows)
+        result = IndicatorRanker.apply_global_fdr_correction(df)
+        real_row = result[result["indicator"] == "maybe_real"].iloc[0]
+        assert real_row["rank"] == "C"
+        assert real_row["adopted"] is np.False_ or real_row["adopted"] is False
+
+    def test_adopted_column_recomputed_after_downgrade(self) -> None:
+        rows = [self._row(f"noise{i}", f"t{i}", "D", 0.5) for i in range(20)]
+        rows.append(self._row("borderline", "t_x", "A", 0.049))
+        df = pd.DataFrame(rows)
+        result = IndicatorRanker.apply_global_fdr_correction(df)
+        borderline = result[result["indicator"] == "borderline"].iloc[0]
+        if borderline["rank"] == "C":
+            assert borderline["adopted"] is np.False_ or borderline["adopted"] is False
+
+
+# ------------------------------------------------------------------ build_step2_targets
+
+class TestBuildStep2Targets:
+    def test_excludes_unavailable_and_short_history(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from src.validation import run_validation as rv
+
+        monkeypatch.setattr(rv, "PROCESSED_DIR", tmp_path)
+        monkeypatch.setattr(rv, "MIN_PRICE_ROWS", 250)
+
+        # fujikuraは指標(nvidia_revenue等)を持ち、価格データも十分
+        dates = pd.date_range("2021-01-01", periods=300, freq="D")
+        pd.DataFrame({"Close": range(300)}, index=dates).to_parquet(
+            tmp_path / "price_fujikura.parquet"
+        )
+        # spacexはUNAVAILABLEなので価格データがあっても対象外(config側の設定)
+        # murataは指標を持つが価格データが短い(30行)
+        short_dates = pd.date_range("2026-01-01", periods=30, freq="D")
+        pd.DataFrame({"Close": range(30)}, index=short_dates).to_parquet(
+            tmp_path / "price_murata.parquet"
+        )
+
+        targets = rv.build_step2_targets()
+        assert "fujikura" in targets
+        assert "murata" not in targets  # 価格データ不足
+        assert "spacex" not in targets  # UNAVAILABLE
+
+    def test_resolves_quantinuum_to_honeywell_price(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from src.validation import run_validation as rv
+
+        monkeypatch.setattr(rv, "PROCESSED_DIR", tmp_path)
+        monkeypatch.setattr(rv, "MIN_PRICE_ROWS", 250)
+
+        dates = pd.date_range("2021-01-01", periods=300, freq="D")
+        pd.DataFrame({"Close": range(300)}, index=dates).to_parquet(
+            tmp_path / "price_honeywell.parquet"
+        )
+
+        targets = rv.build_step2_targets()
+        assert targets.get("quantinuum") == "price_honeywell"
+
+    def test_resolve_price_key_uses_proxy_map(self) -> None:
+        from src.validation.run_validation import _resolve_price_key
+
+        assert _resolve_price_key("quantinuum") == "honeywell"
+        assert _resolve_price_key("fujikura") == "fujikura"

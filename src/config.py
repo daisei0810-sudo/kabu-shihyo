@@ -92,7 +92,10 @@ INSTRUMENTS: list[Instrument] = [
                ticker="XRP-USD", coingecko_id="ripple", held=True),
     Instrument(key="qnt_token", name_ja="Quant Network (QNT トークン)", layer=Layer.CRYPTO_XRP,
                ticker="QNT-USD", coingecko_id="quant-network", held=True,
-               note="※暗号資産。量子計算企業 Quantinuum とは別物。要ユーザー確認。"),
+               note="※暗号資産。量子計算企業 Quantinuum とは別物。要ユーザー確認。"
+                    " Step2検証対象外(2026-07-02判断): XRPのような固有オンチェーン先行指標"
+                    "(RLUSD供給等)がQNTには存在せず、使えるのは価格系列のみで"
+                    "『価格で価格を予測』の自己相関になるためドメイン論理が無い。"),
     # --- AI データセンター / 光通信 ---
     Instrument(key="fujikura", name_ja="フジクラ", layer=Layer.AI_DATACENTER,
                ticker="5803.T", held=True),
@@ -154,7 +157,13 @@ INDEX_TICKERS: dict[str, str] = {
 # 先行指標カタログ
 # ---------------------------------------------------------------------------
 class Indicator(BaseModel):
-    """検証・スコアリング対象の先行指標。"""
+    """検証・スコアリング対象の先行指標。
+
+    Step2(validation/run_validation.py)のデータ読み込みをデータ駆動にするための
+    メタデータ(parquet_stem/column/loader/step2_verifiable/freq)を持つ。
+    単純なparquet読み込みは parquet_stem+column、ピアバスケット等の動的生成は
+    loader で名前解決する(run_validation.py の SPECIAL_LOADERS 参照)。
+    """
 
     key: str
     name_ja: str
@@ -165,36 +174,57 @@ class Indicator(BaseModel):
     targets: list[str] = Field(default_factory=list)
     note: str = ""
 
+    # --- Step2ローダー用メタデータ ---
+    parquet_stem: str | None = None      # 例 "price_index_sox"(拡張子・ディレクトリ抜き)
+    column: str | None = None            # 例 "Close"
+    loader: str | None = None            # 例 "peer_basket:optical"(特殊ローダー名)
+    step2_verifiable: bool = True        # False なら Step2の統計検証をスキップ(四半期capex等)
+    freq: str = "daily"                  # "daily" | "monthly"(月次は日次へffill変換)
+
     @property
     def confidence_weight(self) -> float:
         """data_quality 由来の初期信頼度重み。validation 後にランクで上書きされうる。"""
         return DEFAULT_CONFIDENCE_WEIGHT[self.data_quality]
 
 
-# MVP(Step1)= Crypto/XRP・AIデータセンター・半導体装置の3領域を中心に定義。
-# 他レイヤーは Step4 で拡張(枠だけ用意)。
+# MVP(Step1)= Crypto/XRP・AIデータセンター・半導体装置の3領域を中心に定義していたが、
+# Step2改善(2026-07-02)でrobotics_fa/ev_physical_ai/quantumへドメイン論理のある
+# 指標のみ慎重に拡張。ドメイン論理が説明できない指標(価格の自己相関になるもの)は
+# 追加しない方針を徹底している(詳細はINDICATORS末尾のコメント参照)。
 INDICATORS: list[Indicator] = [
     # ===== XRP / XRPL =====
     Indicator(key="xrp_price", name_ja="XRP価格", layer=Layer.CRYPTO_XRP,
-              source=DataSource.COINGECKO, data_quality=DataQuality.VERIFIED, targets=["xrp"]),
+              source=DataSource.COINGECKO, data_quality=DataQuality.VERIFIED, targets=["xrp"],
+              parquet_stem="price_xrp", column="Close"),
     Indicator(key="rlusd_supply", name_ja="RLUSD発行残高", layer=Layer.CRYPTO_XRP,
               source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"],
-              note="RLUSD発行体の gateway_balances(hexキー)。発行体は確定済み。"),
+              note="RLUSD発行体の gateway_balances(hexキー)。発行体は確定済み。"
+                   "日次1点ずつ蓄積中のため現状は30行未満でStep2は自動スキップされる。",
+              parquet_stem="xrpl_rlusd_supply", column="rlusd_supply"),
     Indicator(key="xrpl_tx_count", name_ja="XRPLトランザクション数", layer=Layer.CRYPTO_XRP,
-              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"]),
+              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"],
+              note="日次1点ずつ蓄積中のため現状は30行未満でStep2は自動スキップされる。",
+              parquet_stem="xrpl_network_stats", column="txn_count"),
     Indicator(key="xrpl_success_payments", name_ja="XRP成功Payment数", layer=Layer.CRYPTO_XRP,
-              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"]),
+              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"],
+              note="専用fetcher未実装(取得元データなし)。"),
     Indicator(key="amm_tvl", name_ja="AMM TVL", layer=Layer.CRYPTO_XRP,
-              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"]),
+              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"],
+              parquet_stem="defillama_xrpl_tvl", column="tvl_usd"),
     Indicator(key="amm_xrp_balance", name_ja="AMM内XRP残高", layer=Layer.CRYPTO_XRP,
               source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"],
-              note="ロック需要スコアの中核(amm_info の XRP側残高)。"),
+              note="ロック需要スコアの中核(amm_info の XRP側残高)。"
+                   "日次1点ずつ蓄積中のため現状は30行未満でStep2は自動スキップされる。",
+              parquet_stem="xrpl_amm_XRP_RLUSD", column="xrp_balance"),
     Indicator(key="xrpl_dex_volume", name_ja="XRPL DEX出来高", layer=Layer.CRYPTO_XRP,
-              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"]),
+              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"],
+              note="専用fetcher未実装(取得元データなし)。"),
     Indicator(key="xrp_pair_volume", name_ja="XRP建てペア出来高", layer=Layer.CRYPTO_XRP,
-              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"]),
+              source=DataSource.XRPL, data_quality=DataQuality.VERIFIED, targets=["xrp"],
+              note="専用fetcher未実装(取得元データなし)。"),
     Indicator(key="stablecoin_tvl", name_ja="Stablecoin TVL", layer=Layer.CRYPTO_XRP,
-              source=DataSource.DEFILLAMA, data_quality=DataQuality.VERIFIED, targets=["xrp"]),
+              source=DataSource.DEFILLAMA, data_quality=DataQuality.VERIFIED, targets=["xrp"],
+              parquet_stem="defillama_stablecoin_tvl", column="stablecoin_tvl_usd"),
     Indicator(key="etf_flows", name_ja="ETF資金流入", layer=Layer.CRYPTO_XRP,
               source=DataSource.NONE, data_quality=DataQuality.UNAVAILABLE, targets=["xrp"],
               note="日次クリーンな無料APIなし。ニュース推定(estimated)に降格可。"),
@@ -215,15 +245,29 @@ INDICATORS: list[Indicator] = [
               source=DataSource.NONE, data_quality=DataQuality.UNAVAILABLE, targets=["xrp"]),
 
     # ===== AI データセンター / 光通信 =====
+    # nvidia_revenue/hyperscaler_capexは四半期5行のみ。7ラグ×6ホライゾン=42通りの相関を
+    # 5行から統計的に主張するのは完全な過適合(実効独立サンプルガード<10に必ず抵触)。
+    # Step2の統計的検証対象からは正式に除外し(step2_verifiable=False)、
+    # Step3のExtendedスコア(capex_trend.py)専用データとして扱う。
     Indicator(key="nvidia_revenue", name_ja="NVIDIA売上・ガイダンス", layer=Layer.AI_DATACENTER,
               source=DataSource.YFINANCE, data_quality=DataQuality.VERIFIED,
-              targets=["nvidia", "fujikura"], note="四半期・遅延あり。"),
+              targets=["nvidia", "fujikura"],
+              note="四半期5行のみ→Step2統計検証は不可能(過適合)。Extendedスコア専用。",
+              parquet_stem="capex_nvda", column="capex", step2_verifiable=False),
     Indicator(key="hyperscaler_capex", name_ja="Hyperscaler CAPEX", layer=Layer.AI_DATACENTER,
               source=DataSource.YFINANCE, data_quality=DataQuality.VERIFIED,
-              targets=["fujikura", "murata"], note="MSFT/GOOGL/AMZN/META capex 合算、四半期遅延。"),
+              targets=["fujikura", "murata"],
+              note="MSFT/GOOGL/AMZN/META capex 合算。四半期5行のみ→Step2統計検証は不可能"
+                   "(過適合)。Extendedスコア専用。",
+              parquet_stem="capex_hyperscaler_total", column="hyperscaler_capex_total",
+              step2_verifiable=False),
     Indicator(key="optical_module_demand", name_ja="光モジュール需要", layer=Layer.AI_DATACENTER,
               source=DataSource.YFINANCE, data_quality=DataQuality.PROXY,
-              targets=["fujikura"], note="フジクラ/住友/古河/村田の株価バスケットで代理。"),
+              targets=["fujikura", "murata"],
+              note="フジクラ/住友/古河/村田の株価バスケットで代理(自己除外)。"
+                   "murataはhyperscaler_capexが検証不可のため、これが唯一の"
+                   "Step2検証可能な先行指標候補(ただしproxy=価格自己相関の側面あり)。",
+              loader="peer_basket:optical"),
     Indicator(key="optical_price_leadtime", name_ja="光トランシーバー価格・納期",
               layer=Layer.AI_DATACENTER, source=DataSource.NONE,
               data_quality=DataQuality.UNAVAILABLE, targets=["fujikura"]),
@@ -231,10 +275,15 @@ INDICATORS: list[Indicator] = [
     # ===== 半導体装置 / HBM / CoWoS / WFE =====
     Indicator(key="sox_index", name_ja="SOX指数(WFEサイクル代理)", layer=Layer.SEMICAP,
               source=DataSource.YFINANCE, data_quality=DataQuality.PROXY,
-              targets=["lasertec_rorze", "kioxia"]),
+              targets=["lasertec_rorze", "kioxia"],
+              note="kioxiaは価格履歴373行(2024-12上場)と短く、長ラグは実効サンプルガードで"
+                   "C降格の見込み(履歴不足を隠さず表示)。",
+              parquet_stem="price_index_sox", column="Close"),
     Indicator(key="tsmc_capex", name_ja="TSMC CAPEX", layer=Layer.SEMICAP,
               source=DataSource.YFINANCE, data_quality=DataQuality.VERIFIED,
-              targets=["lasertec_rorze"], note="TSM 四半期 capex、遅延あり。"),
+              targets=["lasertec_rorze"],
+              note="四半期5行のみ→Step2統計検証は不可能(過適合)。Extendedスコア専用。",
+              parquet_stem="capex_tsm", column="capex", step2_verifiable=False),
     Indicator(key="hbm_price", name_ja="HBM価格・需給", layer=Layer.SEMICAP,
               source=DataSource.NONE, data_quality=DataQuality.UNAVAILABLE,
               targets=["kioxia"]),
@@ -244,7 +293,87 @@ INDICATORS: list[Indicator] = [
     Indicator(key="bb_ratio", name_ja="半導体装置 BBレシオ", layer=Layer.SEMICAP,
               source=DataSource.NONE, data_quality=DataQuality.UNAVAILABLE,
               targets=["lasertec_rorze"], note="SEMI BBレシオ生値は無料API無し。"),
+
+    # ===== ロボティクス / FA (2026-07-02 Step2拡張で新規追加) =====
+    # 産業用ロボット・FA需要の本質は製造業設備投資サイクル。ドメイン論理の強さ順に:
+    # ISM PMI(教科書的先行指標だがFRED_API_KEY必要) > 為替(輸出採算、同時性強め)
+    # > ピアバスケット(価格自己相関の側面あり、補助指標C想定)。
+    # 中国製造業PMI(本来最重要)は無料クリーン時系列が無く取得不可として明示するのみ。
+    Indicator(key="robotics_peer_basket", name_ja="ロボティクス・ピアバスケット(自己除外)",
+              layer=Layer.ROBOTICS_FA, source=DataSource.YFINANCE,
+              data_quality=DataQuality.PROXY, targets=["harmonic", "fanuc", "yaskawa"],
+              note="対象自身を除いたharmonic/fanuc/yaskawa/nabtescoの株価バスケット。"
+                   "セクター共通因子が先行しうるか検証するが、価格自己相関の側面が強く"
+                   "B以上は期待薄(C想定)。",
+              loader="peer_basket:robotics"),
+    Indicator(key="usdjpy_level", name_ja="ドル円(輸出採算)", layer=Layer.ROBOTICS_FA,
+              source=DataSource.YFINANCE, data_quality=DataQuality.PROXY,
+              targets=["fanuc", "yaskawa", "harmonic"],
+              note="ファナック/安川は輸出比率が高く、円安が採算改善→株価に先行しうる。"
+                   "ただし為替は同時性が強く純先行は弱い(C想定)。",
+              parquet_stem="price_index_usdjpy", column="Close"),
+    Indicator(key="ism_mfg_pmi", name_ja="ISM製造業PMI", layer=Layer.ROBOTICS_FA,
+              source=DataSource.FRED, data_quality=DataQuality.VERIFIED,
+              targets=["fanuc", "yaskawa", "harmonic"],
+              note="設備投資・FA需要の教科書的先行指標(50割れ/回復が数ヶ月先行)。"
+                   "FRED_API_KEY未設定時はデータなしで自動スキップ。月次(月60行程度)のため"
+                   "日次へffill変換して検証。ドメイン論理は最強だが月次制約でB〜C想定。",
+              parquet_stem="fred_ism_mfg_pmi", column="ism_mfg_pmi", freq="monthly"),
+    Indicator(key="durable_goods_orders", name_ja="米耐久財受注", layer=Layer.ROBOTICS_FA,
+              source=DataSource.FRED, data_quality=DataQuality.VERIFIED,
+              targets=["fanuc", "yaskawa"],
+              note="耐久財受注(コア資本財)は設備投資の先行指標。ロボット需要は"
+                   "耐久財投資の川下需要。FRED_API_KEY未設定時は自動スキップ。月次。",
+              parquet_stem="fred_durable_goods_orders", column="durable_goods_orders",
+              freq="monthly"),
+    Indicator(key="china_mfg_pmi", name_ja="中国製造業PMI(取得不可)", layer=Layer.ROBOTICS_FA,
+              source=DataSource.NONE, data_quality=DataQuality.UNAVAILABLE,
+              targets=["fanuc", "yaskawa"],
+              note="ファナック・安川の中国売上比率を踏まえると本来最重要の先行指標だが、"
+                   "財新(Caixin)中国PMI等の無料クリーン時系列が存在しないため取得不可。"),
+
+    # ===== EV / Physical AI (2026-07-02 Step2拡張で新規追加) =====
+    # Teslaの真の先行指標(週次納車推定・中国保険登録台数・FSD採用率)は無料時系列が
+    # 存在しない。金利感応度のみドメイン論理があるため1本追加するが、このレイヤーは
+    # 「無料データで有効な先行指標をほぼ作れない」というのが正直な結論。
+    # NVIDIA/SOX/VIXをTesla proxyにすることは検討したが、業種テーマ連想による
+    # 株価間相関(自己相関)であり需要の先行指標ではないため追加しない。
+    Indicator(key="us10y_yield", name_ja="米10年金利(割引率)", layer=Layer.EV_PHYSICAL_AI,
+              source=DataSource.YFINANCE, data_quality=DataQuality.PROXY,
+              targets=["tesla"],
+              note="長期キャッシュフロー期待の大きいグロース株で割引率感応度が高い。"
+                   "金利上昇がバリュエーション圧縮に先行しうるが、Tesla固有材料"
+                   "(納車台数/FSD/Optimus)の影響が支配的なためC想定。",
+              parquet_stem="price_index_us10y", column="Close"),
+
+    # ===== 量子 (2026-07-02 Step2拡張で新規追加) =====
+    # Quantinuumは非上場のためHoneywell(HON)を代理指標とする(config既存の設計)。
+    # 量子ピュアプレイ(ionq/dwave/rigetti/ibm)バスケットが先行しうるか検証するが、
+    # HONの量子事業比率は売上のごく一部(航空宇宙・オートメーションが主力)であり、
+    # 相関がほぼ出ない/出ても意味が薄い可能性が高い(D〜C想定)。
+    # 【循環参照回避】バスケット構成にhoneywell自身は含めない。
+    Indicator(key="quantum_peer_basket", name_ja="量子ピュアプレイ・バスケット(HON除外)",
+              layer=Layer.QUANTUM, source=DataSource.YFINANCE,
+              data_quality=DataQuality.PROXY, targets=["quantinuum"],
+              note="ionq/dwave/rigetti/ibmのバスケット(honeywell除外、循環参照回避)。"
+                   "検証対象はHoneywell株価(Quantinuumの代理)。HONの量子事業比率は"
+                   "売上のごく一部のため相関がほぼ出ない可能性が高い(D〜C想定)。"
+                   "この検証自体が『Quantinuumの投資判断をHON株で近似することの"
+                   "限界』を定量的に示す価値がある。",
+              loader="peer_basket:quantum"),
 ]
+
+# ロボティクス/量子ピアバスケットの構成銘柄(自己除外ロジックはoptical_module_demandと同じ
+# _peer_basket_excluding() を再利用)。定義はここで一元管理し run_validation.py から参照する。
+ROBOTICS_PEER_KEYS: list[str] = ["harmonic", "fanuc", "yaskawa", "nabtesco"]
+QUANTUM_PEER_KEYS: list[str] = ["ionq", "dwave", "rigetti", "ibm"]  # honeywell除外(循環参照回避)
+
+# Step2検証対象に価格データとして最低限必要な行数。Zスコア窓(252営業日)を確保するため
+# 250行を下限とする(methodology.md §1のZスコア窓=最低252営業日に準拠)。
+MIN_PRICE_ROWS: int = 250
+
+# 検証対象価格が自身に無い銘柄 → 代理銘柄の価格で検証する(quantinuum非上場のため)。
+PRICE_PROXY: dict[str, str] = {"quantinuum": "honeywell"}
 
 
 # ---------------------------------------------------------------------------

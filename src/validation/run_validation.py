@@ -1,4 +1,10 @@
-"""Step2 検証パイプライン — フジクラ・ローツェ・XRP を対象に先行指標の有効性を検証。
+"""Step2 検証パイプライン — 保有銘柄のうち検証条件を満たすものを対象に先行指標を検証。
+
+STEP2_TARGETSは2026-07-02にハードコード(fujikura/lasertec_rorze/xrpの3銘柄限定)から
+データ駆動に変更した。config.INSTRUMENTS + config.INDICATORS から動的に対象を決定する
+(build_step2_targets())。指標の読み込みも `src/indicator_loader.py`(config.Indicatorの
+parquet_stem/column/loader/freq メタデータに基づくデータ駆動ローダー、
+src/scoring/engine.py のExtendedスコア計算と共有)に一本化した。
 
 出力:
   outputs/lag_correlation_matrix.csv
@@ -13,42 +19,47 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import INDICATORS, OUTPUTS, DataQuality
+from src.config import (
+    INDICATORS,
+    MIN_PRICE_ROWS,
+    OUTPUTS,
+    PRICE_PROXY,
+    DataQuality,
+    held_instruments,
+)
 from src.data_sources.base import setup_logging
 from src.features.engineer import FeatureEngineer
 from src.features.events import ThresholdEventDetector
+from src.indicator_loader import load_indicator_series
 from src.validation.event_study import EventStudy
 from src.validation.lag_correlation import LagCorrelationAnalyzer
 from src.validation.ranker import IndicatorRanker
 
 logger = logging.getLogger(__name__)
 
-# Step2 の検証対象（資産キー → price Parquet のキー）
-STEP2_TARGETS: dict[str, str] = {
-    "fujikura": "price_fujikura",
-    "lasertec_rorze": "price_lasertec_rorze",
-    "xrp": "price_xrp",
-}
-
 PROCESSED_DIR = Path("data/processed")
 OUTPUT_DIR = Path(OUTPUTS)
 
 
+def _resolve_price_key(asset_key: str) -> str:
+    """検証対象の価格系列キーを解決する(非上場銘柄は代理銘柄の価格を使う)。"""
+    return PRICE_PROXY.get(asset_key, asset_key)
+
+
 def _load_price(asset_key: str) -> pd.Series | None:
-    """Parquetから終値系列を読む。"""
-    path = PROCESSED_DIR / f"price_{asset_key}.parquet"
+    """Parquetから終値系列を読む。非上場銘柄は代理銘柄(PRICE_PROXY)の価格を使う。"""
+    price_key = _resolve_price_key(asset_key)
+    path = PROCESSED_DIR / f"price_{price_key}.parquet"
     if not path.exists():
         logger.warning("price file not found: %s", path)
         return None
     df = pd.read_parquet(path)
-    # カラム名は yfinance の auto_adjust が揺れる。Close / close / Price を探す
     for col in ["Close", "close", "Price", "price"]:
         if col in df.columns:
             s = df[col].dropna()
             s.index = pd.to_datetime(s.index).tz_localize(None)
             s.name = asset_key
             return s
-    # マルチレベルカラムの場合
     if isinstance(df.columns, pd.MultiIndex):
         try:
             s = df.xs("Close", axis=1, level=0).squeeze().dropna()
@@ -61,95 +72,45 @@ def _load_price(asset_key: str) -> pd.Series | None:
     return None
 
 
-# 光モジュール需要のピアバスケット候補(対象は実行時に除外する)
-OPTICAL_PEERS: list[str] = ["fujikura", "sumitomo_electric", "furukawa_electric", "murata"]
+def build_step2_targets() -> dict[str, str]:
+    """Step2検証対象を動的に決定する。
 
-
-def _load_price_close(stem: str) -> pd.Series | None:
-    """price_*.parquet から Close 系列を読む(tz除去)。"""
-    path = PROCESSED_DIR / f"{stem}.parquet"
-    if not path.exists():
-        return None
-    df = pd.read_parquet(path)
-    if hasattr(df.index, "tz") and df.index.tz is not None:
-        df.index = df.index.tz_localize(None)
-    if "Close" in df.columns:
-        return df["Close"].dropna()
-    if isinstance(df.columns, pd.MultiIndex):
-        try:
-            return df.xs("Close", axis=1, level=0).squeeze().dropna()
-        except Exception:
-            return None
-    return None
-
-
-def _peer_basket_excluding(target_key: str, peers: list[str]) -> pd.Series | None:
-    """対象を除いたピア銘柄の等加重正規化バスケットを作る(自己proxy回避)。"""
-    series_list: list[pd.Series] = []
-    for p in peers:
-        if p == target_key:
-            continue  # 自分自身は除外(循環参照を防ぐ)
-        s = _load_price_close(f"price_{p}")
-        if s is not None and len(s) > 30:
-            series_list.append(s / s.iloc[0])  # 初日=1に正規化
-    if not series_list:
-        return None
-    basket = pd.concat(series_list, axis=1).mean(axis=1)
-    return basket.dropna()
-
-
-def _load_indicator_series(indicator_key: str, target_key: str) -> pd.Series | None:
-    """対応する処理済みファイルから指標値を1系列読む。
-
-    target_key: 検証対象の資産。proxyバスケットから対象自身を除外するために使う。
+    条件: held銘柄 かつ data_quality != UNAVAILABLE(非上場でも代理があればOK)
+        かつ 価格データが MIN_PRICE_ROWS 行以上 かつ 紐づく利用可能な指標が1つ以上ある。
+    spacex(価格データ無し)は自動的に除外される。qnt_tokenはconfig.py側でIndicatorが
+    定義されていないため自動的に除外される(ドメイン論理の無い指標を追加しない方針)。
     """
-    # 光モジュール需要 = 対象を除いた光関連ピアバスケット(自己proxy回避)
-    if indicator_key == "optical_module_demand":
-        s = _peer_basket_excluding(target_key, OPTICAL_PEERS)
-        if s is not None:
-            s.name = indicator_key
-        return s
+    targets: dict[str, str] = {}
+    for inst in held_instruments():
+        if inst.data_quality == DataQuality.UNAVAILABLE:
+            continue
 
-    mapping: dict[str, tuple[str, str]] = {
-        # indicator_key → (parquet_stem, column)
-        "xrp_price": ("price_xrp", "Close"),
-        "stablecoin_tvl": ("defillama_stablecoin_tvl", "stablecoin_tvl_usd"),
-        "amm_tvl": ("defillama_xrpl_tvl", "tvl_usd"),
-        "sox_index": ("price_index_sox", "Close"),
-        "tsmc_capex": ("capex_tsm", "capex"),
-        "nvidia_revenue": ("capex_nvda", "capex"),         # proxy: NVDAのCAPEXを売上代理に
-        "hyperscaler_capex": ("capex_hyperscaler_total", "hyperscaler_capex_total"),
-    }
-
-    if indicator_key not in mapping:
-        return None
-
-    stem, col = mapping[indicator_key]
-    path = PROCESSED_DIR / f"{stem}.parquet"
-    if not path.exists():
-        return None
-
-    df = pd.read_parquet(path)
-    # timezone を除去
-    if hasattr(df.index, "tz") and df.index.tz is not None:
-        df.index = df.index.tz_localize(None)
-
-    if col in df.columns:
-        s = df[col].dropna()
-        s.name = indicator_key
-        return s
-
-    # Close カラムが MultiIndex になっている場合
-    if isinstance(df.columns, pd.MultiIndex):
+        price_key = _resolve_price_key(inst.key)
+        path = PROCESSED_DIR / f"price_{price_key}.parquet"
+        if not path.exists():
+            continue
         try:
-            s = df.xs(col, axis=1, level=0).squeeze().dropna()
-            s.name = indicator_key
-            return s
-        except Exception:
-            pass
+            n_rows = len(pd.read_parquet(path))
+        except Exception as exc:
+            logger.warning("price row count failed for %s: %s", inst.key, exc)
+            continue
+        if n_rows < MIN_PRICE_ROWS:
+            logger.info(
+                "  %s: 価格データ%d行 < 最低%d行 → Step2対象外",
+                inst.key, n_rows, MIN_PRICE_ROWS,
+            )
+            continue
 
-    logger.warning("column '%s' not found in %s", col, path.name)
-    return None
+        has_indicator = any(
+            inst.key in ind.targets and ind.data_quality != DataQuality.UNAVAILABLE
+            for ind in INDICATORS
+        )
+        if not has_indicator:
+            continue
+
+        targets[inst.key] = f"price_{price_key}"
+
+    return targets
 
 
 def run_step2() -> None:
@@ -166,13 +127,16 @@ def run_step2() -> None:
     all_event_rows: list[pd.DataFrame] = []
     all_scorecard_rows: list[pd.DataFrame] = []
 
-    # 検証対象の指標を絞る（verified / proxy で data があるもの）
+    step2_targets = build_step2_targets()
+    logger.info("Step2検証対象(動的決定): %s", list(step2_targets.keys()))
+
+    # 検証対象の指標を絞る（verified / proxy で data があるもの、Step2検証可能なもの）
     candidate_indicators = [
         ind for ind in INDICATORS
-        if ind.data_quality != DataQuality.UNAVAILABLE
+        if ind.data_quality != DataQuality.UNAVAILABLE and ind.step2_verifiable
     ]
 
-    for asset_key in STEP2_TARGETS:
+    for asset_key in step2_targets:
         logger.info("=== 検証対象資産: %s ===", asset_key)
 
         price = _load_price(asset_key)
@@ -188,9 +152,11 @@ def run_step2() -> None:
             if asset_key not in ind.targets:
                 continue
 
-            logger.info("  指標: %s (quality=%s)", ind.key, ind.data_quality.value)
+            logger.info(
+                "  指標: %s (quality=%s, freq=%s)", ind.key, ind.data_quality.value, ind.freq
+            )
 
-            series = _load_indicator_series(ind.key, asset_key)
+            series = load_indicator_series(ind, asset_key, respect_step2_flag=True)
             if series is None:
                 logger.info("    → データなし、スキップ")
                 continue
@@ -244,6 +210,7 @@ def run_step2() -> None:
                     target_key=asset_key,
                     data_quality=ind.data_quality.value,
                     confidence_weight=ind.confidence_weight,
+                    freq=ind.freq,
                 )
                 if not sc.empty:
                     all_scorecard_rows.append(sc)
@@ -262,11 +229,14 @@ def run_step2() -> None:
 
     save(all_lag_rows, "lag_correlation_matrix.csv")
     save(all_event_rows, "event_study_results.csv")
-    save(all_scorecard_rows, "indicator_scorecard.csv")
 
-    # スコアカードのサマリーを表示
     if all_scorecard_rows:
         sc_df = pd.concat(all_scorecard_rows, ignore_index=True)
+        sc_df = ranker.apply_global_fdr_correction(sc_df)
+        path = OUTPUT_DIR / "indicator_scorecard.csv"
+        sc_df.to_csv(path, index=False, encoding="utf-8-sig")
+        logger.info("saved: %s (%d rows)", path, len(sc_df))
+
         logger.info("\n=== 有効性スコアカード サマリー (見出し相関=定常/変化ベース) ===")
         for _, row in sc_df.sort_values("rank").iterrows():
             logger.info(
@@ -281,6 +251,8 @@ def run_step2() -> None:
                 row["hit_rate"] * 100,
                 row["confidence_note"],
             )
+    else:
+        logger.warning("indicator_scorecard.csv: 出力データなし")
 
 
 if __name__ == "__main__":

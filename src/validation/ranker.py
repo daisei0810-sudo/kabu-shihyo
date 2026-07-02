@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from src.config import RANK_THRESHOLDS
+from src.validation.lag_correlation import _bh_correction
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,9 @@ def assign_rank(
 class IndicatorRanker:
     """ラグ相関・イベントスタディ結果から指標の有効性スコアカードを生成。"""
 
+    # 月次データを日次ffillした際の重複倍率(約21営業日/月)。実効Nガードの追加補正に使う。
+    MONTHLY_FFILL_DUPLICATION_FACTOR: float = 21.0
+
     def build_scorecard(
         self,
         lag_corr_df: pd.DataFrame,
@@ -70,6 +74,7 @@ class IndicatorRanker:
         target_key: str,
         data_quality: str,
         confidence_weight: float,
+        freq: str = "daily",
     ) -> pd.DataFrame:
         """指標ごとの有効性スコアカードを生成。
 
@@ -105,6 +110,7 @@ class IndicatorRanker:
             best_horizon = int(best_corr_row["horizon_days"])
             best_corr = float(best_corr_row["spearman_r"])
             best_q = float(best_corr_row["q_spearman"])
+            best_p_raw = float(best_corr_row["spearman_p"])
             best_n = int(best_corr_row["n_obs"])
 
             n_consistent = self._count_consistent_periods(
@@ -112,7 +118,7 @@ class IndicatorRanker:
             )
         else:
             best_lag = best_horizon = 0
-            best_corr = best_q = 0.0
+            best_corr = best_q = best_p_raw = 0.0
             best_n = 0
             n_consistent = 0
 
@@ -150,6 +156,13 @@ class IndicatorRanker:
         # 実効サンプルは数個しかなく、相関値が高くても統計的に信頼できない。
         span = max(best_lag + best_horizon, 1)
         effective_n = best_n / span if best_n else 0.0
+
+        # 月次指標の追加補正(2026-07-02 Step2拡張): 月次データを日次へffillすると
+        # 同じ値が約21営業日(1ヶ月)連続で並び、n_obsが実際の独立観測数(=月数)より
+        # 大幅に水増しされる。実効Nをさらに/21して「本当の独立サンプルは月単位」を反映する。
+        if freq == "monthly":
+            effective_n = effective_n / self.MONTHLY_FFILL_DUPLICATION_FACTOR
+
         insufficient_history = effective_n < 10.0
 
         # 降格ルール(見せかけ相関・履歴不足は採用しない)
@@ -171,6 +184,8 @@ class IndicatorRanker:
             "spearman_r_level": round(level_corr, 4),
             "trend_confound": trend_confound,
             "q_spearman": round(best_q, 4),
+            "spearman_p_raw": round(best_p_raw, 6),
+            "freq": freq,
             "hit_rate": round(hit_rate, 3),
             "max_dd": round(max_dd, 4),
             "sharpe": sharpe,
@@ -191,6 +206,42 @@ class IndicatorRanker:
         return pd.DataFrame(rows)
 
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def apply_global_fdr_correction(scorecard_df: pd.DataFrame) -> pd.DataFrame:
+        """全指標×全対象の最良ラグp値に対し、2段目のBH-FDR補正を横断的にかける。
+
+        指標数・対象銘柄数が増えるほど、後付けで選ばれた「最良ラグ」の偽陽性率は
+        上昇する(多重検定バイアス)。`q_spearman`(compute単位=1指標×1対象内の
+        42通りに対する補正)だけでは、指標を跨いだ全体の多重性を捕捉できない。
+        ここでは全行のraw p値(spearman_p_raw)を集めて再度BH補正し、
+        `q_spearman_global` 列を追加した上で、global q値が0.05以上ならA+/A/Bを
+        C へ降格する(既存のtrend_confound/insufficient_historyと同じ降格パターン)。
+
+        このため、指標を増やすほど個々のランクは全体として保守化する
+        (「乱造した指標がまぐれでBに乗る」のを防ぐ)。
+        """
+        if scorecard_df.empty or "spearman_p_raw" not in scorecard_df.columns:
+            return scorecard_df
+
+        df = scorecard_df.copy()
+        q_global = _bh_correction(df["spearman_p_raw"].tolist())
+        df["q_spearman_global"] = [round(q, 4) for q in q_global]
+
+        downgrade_mask = (df["q_spearman_global"] >= 0.05) & (df["rank"].isin(["A+", "A", "B"]))
+        if downgrade_mask.any():
+            logger.info(
+                "グローバルFDR補正により%d件をCへ降格: %s",
+                int(downgrade_mask.sum()),
+                df.loc[downgrade_mask, ["indicator", "target"]].to_dict("records"),
+            )
+        df.loc[downgrade_mask, "rank"] = "C"
+        df.loc[downgrade_mask, "confidence_note"] = (
+            df.loc[downgrade_mask, "confidence_note"] + "; グローバルFDR補正により降格"
+        )
+        df["adopted"] = df["rank"].isin(["A+", "A", "B"])
+
+        return df
 
     @staticmethod
     def _count_consistent_periods(

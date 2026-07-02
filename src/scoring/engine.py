@@ -17,10 +17,17 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import DATA_PROCESSED, INDICATORS, OUTPUTS, DataQuality
+from src.config import DATA_PROCESSED, INDICATORS, OUTPUTS, DataQuality, Indicator
+from src.indicator_loader import load_indicator_series
 from src.scoring.normalizer import score_from_series
 
 logger = logging.getLogger(__name__)
+
+# indicator_key → Indicator の逆引き(config.INDICATORSから1回だけ構築)。
+# 以前は scoring/engine.py と validation/run_validation.py が別々に
+# indicator_key→(parquet_stem, column) のmapping辞書をハードコードしていたが、
+# 共通ローダー(indicator_loader.py)に一本化した。
+_INDICATORS_BY_KEY: dict[str, Indicator] = {ind.key: ind for ind in INDICATORS}
 
 PROCESSED_DIR_DEFAULT = Path(DATA_PROCESSED)
 OUTPUT_DIR = Path(OUTPUTS)
@@ -193,83 +200,24 @@ class ScoreEngine:
     def _get_current_score(
         self, ind_key: str, target: str
     ) -> tuple[float | None, float | None]:
-        """指標キーから現在値とスコアを取得。"""
-        series, latest = self._load_indicator_latest(ind_key, target)
-        if series is None or latest is None:
+        """指標キーから現在値とスコアを取得。
+
+        共通ローダー(indicator_loader.py)経由でconfig.Indicatorのメタデータに
+        基づき時系列を読み込む(respect_step2_flag=False: 四半期capex等の
+        step2_verifiable=False指標もExtendedスコアでは引き続き使う。
+        score_from_series自身が短い系列を自然にNone扱いする)。
+        """
+        ind = _INDICATORS_BY_KEY.get(ind_key)
+        if ind is None:
             return None, None
+        series = load_indicator_series(
+            ind, target, processed_dir=self.processed_dir, respect_step2_flag=False
+        )
+        if series is None or series.empty:
+            return None, None
+        latest = float(series.iloc[-1])
         score, _ = score_from_series(series, latest)
         return latest, score
-
-    def _load_indicator_latest(
-        self, ind_key: str, target: str
-    ) -> tuple[pd.Series | None, float | None]:
-        """指標の歴史系列と最新値を取得。"""
-        if ind_key == "optical_module_demand":
-            return self._load_peer_basket(target)
-
-        mapping: dict[str, tuple[str, str]] = {
-            "xrp_price":          ("price_xrp", "Close"),
-            "stablecoin_tvl":     ("defillama_stablecoin_tvl", "stablecoin_tvl_usd"),
-            "amm_tvl":            ("defillama_xrpl_tvl", "tvl_usd"),
-            "amm_xrp_balance":    ("xrpl_amm_XRP_RLUSD", "xrp_balance"),
-            "rlusd_supply":       ("xrpl_rlusd_supply", "rlusd_supply"),
-            "sox_index":          ("price_index_sox", "Close"),
-            "tsmc_capex":         ("capex_tsm", "capex"),
-            "nvidia_revenue":     ("capex_nvda", "capex"),
-            "hyperscaler_capex":  ("capex_hyperscaler_total", "hyperscaler_capex_total"),
-            "xrpl_tx_count":      ("xrpl_network_stats", "txn_count"),
-        }
-
-        if ind_key not in mapping:
-            return None, None
-
-        stem, col = mapping[ind_key]
-        path = self.processed_dir / f"{stem}.parquet"
-        if not path.exists():
-            return None, None
-        try:
-            df = pd.read_parquet(path)
-            if hasattr(df.index, "tz") and df.index.tz is not None:
-                df.index = df.index.tz_convert(None)
-            df = df.sort_index()
-            if col not in df.columns:
-                return None, None
-            s = df[col].dropna()
-            if s.empty:
-                return None, None
-            return s, float(s.iloc[-1])
-        except Exception as exc:
-            logger.warning("load failed: %s: %s", stem, exc)
-            return None, None
-
-    def _load_peer_basket(
-        self, target: str
-    ) -> tuple[pd.Series | None, float | None]:
-        """光モジュール需要 = 対象を除いたピアバスケット(自己proxy回避)。"""
-        peers = ["fujikura", "sumitomo_electric", "furukawa_electric", "murata"]
-        series_list: list[pd.Series] = []
-        for p in peers:
-            if p == target:
-                continue
-            path = self.processed_dir / f"price_{p}.parquet"
-            if not path.exists():
-                continue
-            try:
-                df = pd.read_parquet(path)
-                if hasattr(df.index, "tz") and df.index.tz is not None:
-                    df.index = df.index.tz_convert(None)
-                if "Close" in df.columns:
-                    s = df["Close"].dropna()
-                    if len(s) > 0:
-                        series_list.append(s / float(s.iloc[0]))
-            except Exception:
-                continue
-        if not series_list:
-            return None, None
-        basket = pd.concat(series_list, axis=1).mean(axis=1).dropna()
-        if basket.empty:
-            return None, None
-        return basket, float(basket.iloc[-1])
 
     @staticmethod
     def _weighted_avg(
