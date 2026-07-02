@@ -168,7 +168,39 @@ def _fmt_pct(val: object) -> str:
         return "--"
 
 
-def _section_portfolio(df: pd.DataFrame) -> list[str]:
+_BULLISH_OUTLOOKS: frozenset[str] = frozenset({"強気", "中立-強気"})
+_BEARISH_OUTLOOKS: frozenset[str] = frozenset({"弱気", "中立-弱気"})
+_BEARISH_DIP_DECISIONS: frozenset[str] = frozenset({"売り時候補", "過熱警戒"})
+_BULLISH_DIP_DECISIONS: frozenset[str] = frozenset({"強い押し目", "押し目候補"})
+
+
+def _detect_signal_divergence(outlook: str, dip_decision: str | None) -> str | None:
+    """ポートフォリオシグナル(実需/セクター系)と押し目・売り時判定(自社株価テクニカル系)が
+    逆方向を示している場合に警告文を返す(§XX相互参照)。
+
+    両者は異なる入力(前者=proxy/セクター指標のパーセンタイル、後者=自社株価の
+    RSI/MA乖離)を見ているため、一致しないこと自体は異常ではない。だが並べて
+    表示すると矛盾に見えるため、無理に一致させず「見ている指標が違う」ことを
+    明示する。
+    """
+    if not dip_decision:
+        return None
+    if outlook in _BULLISH_OUTLOOKS and dip_decision in _BEARISH_DIP_DECISIONS:
+        return (
+            f"⚠️ ポートフォリオシグナルは「{outlook}」だが、押し目・売り時判定は"
+            f"「{dip_decision}」。実需/セクター系スコアと自社株価のテクニカルが"
+            "逆方向 — 詳細は「押し目・売り時判定」セクション参照。"
+        )
+    if outlook in _BEARISH_OUTLOOKS and dip_decision in _BULLISH_DIP_DECISIONS:
+        return (
+            f"⚠️ ポートフォリオシグナルは「{outlook}」だが、押し目・売り時判定は"
+            f"「{dip_decision}」。実需/セクター系スコアと自社株価のテクニカルが"
+            "逆方向 — 詳細は「押し目・売り時判定」セクション参照。"
+        )
+    return None
+
+
+def _section_portfolio(df: pd.DataFrame, dipsell_df: pd.DataFrame | None = None) -> list[str]:
     lines: list[str] = ["## ポートフォリオ シグナル", ""]
     portfolio = df[~df["target"].str.contains("demand", na=False)].copy()
 
@@ -176,18 +208,32 @@ def _section_portfolio(df: pd.DataFrame) -> list[str]:
         lines += ["*シグナルデータなし*", ""]
         return lines
 
+    dip_decision_by_target: dict[str, str] = {}
+    if dipsell_df is not None and not dipsell_df.empty and "target" in dipsell_df.columns:
+        dip_decision_by_target = dict(
+            zip(dipsell_df["target"], dipsell_df.get("decision", ""), strict=False)
+        )
+
     lines.append("| 銘柄 | Hard | Extended | Confidence | Outlook | Action |")
     lines.append("|------|-----:|---------:|:----------:|---------|--------|")
+    divergences: list[str] = []
     for _, row in portfolio.iterrows():
-        icon = _icon(str(row.get("outlook", "")))
+        outlook = str(row.get("outlook", ""))
+        icon = _icon(outlook)
+        target = str(row.get("target", ""))
+        name_ja = str(row.get("name_ja", target))
         lines.append(
-            f"| {row.get('name_ja', row['target'])} "
+            f"| {name_ja} "
             f"| {_fmt_score(row.get('hard_score'))} "
             f"| {_fmt_score(row.get('extended_score'))} "
             f"| {_fmt_pct(row.get('confidence_pct'))} "
-            f"| {icon} {row.get('outlook', '--')} "
+            f"| {icon} {outlook} "
             f"| {row.get('action', '--')} |"
         )
+        dip_decision = dip_decision_by_target.get(target)
+        warning = _detect_signal_divergence(outlook, dip_decision)
+        if warning:
+            divergences.append(f"**{name_ja}**: {warning}")
 
     hard_avg = portfolio["hard_score"].dropna().mean()
     ext_avg  = portfolio["extended_score"].dropna().mean()
@@ -197,6 +243,16 @@ def _section_portfolio(df: pd.DataFrame) -> list[str]:
         f"Hard: {_fmt_score(hard_avg)} / Extended: {_fmt_score(ext_avg)}"
     )
     lines.append("")
+
+    if divergences:
+        lines.append(f"<details><summary>⚠️ シグナル相違あり({len(divergences)}件)</summary>")
+        lines.append("")
+        for d in divergences:
+            lines.append(f"- {d}")
+        lines.append("")
+        lines.append("</details>")
+        lines.append("")
+
     return lines
 
 
@@ -438,6 +494,13 @@ def _section_dip_sell(ds: pd.DataFrame) -> list[str]:
         "テクニカル指標(RSI/MA乖離)とHard/Extendedスコアのみで近似。"
         "ニュース・材料監視の実装後に本判定へ置き換え予定。"
     )
+    lines.append(
+        "> ℹ️ この判定は**銘柄自身の株価**のテクニカル(RSI・移動平均乖離)が基準。"
+        "「ポートフォリオ シグナル」のExtendedスコアは代理指標(セクターETF・"
+        "ピア株価バスケット等)のパーセンタイル順位が基準であり、見ている対象が異なる。"
+        "両者が逆方向を示す場合は「セクター全体は堅調だが個別株価が過熱/割安」"
+        "という状態を意味しうる(矛盾ではない)。"
+    )
     lines.append("")
     if ds is None or ds.empty:
         lines += ["*データなし (Step3 未実行)*", ""]
@@ -573,7 +636,7 @@ def generate_daily_report() -> str:
     ))
 
     if signals_df is not None and not signals_df.empty:
-        lines.extend(_section_portfolio(signals_df))
+        lines.extend(_section_portfolio(signals_df, ds_df))
         lines.extend(_section_xrp(signals_df))
     else:
         lines += ["*portfolio_signal_scores.csv なし (Step3 未実行)*", ""]
