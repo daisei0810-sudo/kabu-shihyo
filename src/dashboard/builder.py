@@ -578,7 +578,7 @@ _MANIFEST_TEMPLATE = {
 }
 
 _SW_JS = """\
-const CACHE = 'kabu-v1';
+const CACHE = 'kabu-__CACHE_VERSION__';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -767,5 +767,11 @@ def build_dashboard() -> None:
     logger.info("manifest.json saved")
 
     # sw.js
-    (OUTPUT_DIR / "sw.js").write_text(_SW_JS, encoding="utf-8")
-    logger.info("sw.js saved")
+    # CACHE名にビルド時刻を埋め込みファイル内容を毎回変える。sw.jsが前回と
+    # バイト単位で同一だとブラウザがService Worker更新を検知せず、
+    # cache-first戦略により初回キャッシュしたindex.htmlを無期限に配信し
+    # 続けてしまう(PWAが更新されない不具合)ため。
+    cache_version = now.strftime("%Y%m%d%H%M")
+    sw_js = _SW_JS.replace("__CACHE_VERSION__", cache_version)
+    (OUTPUT_DIR / "sw.js").write_text(sw_js, encoding="utf-8")
+    logger.info("sw.js saved (cache=kabu-%s)", cache_version)
