@@ -12,5 +12,5 @@ robotics_peer_basket,fanuc,proxy,0.5,30,120,-0.459,-0.312,False,0.0,0.0,daily,0.
 usdjpy_level,fanuc,proxy,0.5,180,120,-0.5758,-0.5472,False,0.0,0.0,daily,0.8,-0.0283,1.65,True,693,2.3,True,True,0,C,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
 robotics_peer_basket,yaskawa,proxy,0.5,90,60,-0.2084,0.1814,False,0.0,0.0,daily,0.417,-0.3972,0.39,False,818,5.5,True,False,0,D,False,履歴不足: 実効独立サンプル≈5(<10)→信頼不可; proxyデータ → 直接の因果性未確認,0.0
 usdjpy_level,yaskawa,proxy,0.5,180,90,-0.3075,-0.3422,False,0.0,0.0,daily,0.4,-0.1113,0.706,False,723,2.7,True,True,1,D,False,履歴不足: 実効独立サンプル≈3(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-us10y_yield,tesla,proxy,0.5,180,120,-0.3421,-0.4551,False,0.0,0.0,daily,0.167,-0.7454,-0.661,False,702,2.3,True,True,0,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+us10y_yield,tesla,proxy,0.5,180,120,-0.342,-0.4551,False,0.0,0.0,daily,0.167,-0.7454,-0.661,False,702,2.3,True,True,0,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
 quantum_peer_basket,quantinuum,proxy,0.5,60,120,0.5105,0.3247,False,0.0,0.0,daily,0.429,-0.2199,-0.0,False,822,4.6,True,True,0,D,False,履歴不足: 実効独立サンプル≈5(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
