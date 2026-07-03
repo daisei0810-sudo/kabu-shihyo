@@ -1,0 +1,26 @@
+﻿key,name_ja,layer,ticker,coingecko_id,held,data_quality,proxy_key,note
+xrp,XRP,crypto_xrp,XRP-USD,ripple,True,verified,,
+qnt_token,Quant Network (QNT トークン),crypto_xrp,QNT-USD,quant-network,True,verified,,※暗号資産。量子計算企業 Quantinuum とは別物。要ユーザー確認。 Step2検証対象外(2026-07-02判断): XRPのような固有オンチェーン先行指標(RLUSD供給等)がQNTには存在せず、使えるのは価格系列のみで『価格で価格を予測』の自己相関になるためドメイン論理が無い。
+fujikura,フジクラ,ai_datacenter,5803.T,,True,verified,,
+murata,村田製作所,ai_datacenter,6981.T,,True,verified,,
+sumitomo_electric,住友電工,ai_datacenter,5802.T,,False,verified,,
+furukawa_electric,古河電工,ai_datacenter,5801.T,,False,verified,,
+nvidia,NVIDIA,ai_datacenter,NVDA,,False,verified,,
+lasertec_rorze,ローツェ,semicap,6323.T,,True,verified,,
+kioxia,キオクシア,semicap,285A.T,,True,verified,,
+advantest,アドバンテスト,semicap,6857.T,,False,verified,,
+towa,TOWA,semicap,6315.T,,False,verified,,
+kokusai_electric,KOKUSAI ELECTRIC,semicap,6525.T,,False,verified,,
+shibaura,芝浦メカトロニクス,semicap,6590.T,,False,verified,,
+harmonic,ハーモニック・ドライブ・システムズ,robotics_fa,6324.T,,True,verified,,
+fanuc,ファナック,robotics_fa,6954.T,,True,verified,,
+yaskawa,安川電機,robotics_fa,6506.T,,True,verified,,
+nabtesco,ナブテスコ,robotics_fa,6268.T,,False,verified,,
+tesla,Tesla,ev_physical_ai,TSLA,,True,verified,,
+spacex,SpaceX,ev_physical_ai,,,True,unavailable,,非上場。評価額/資金調達/ロックアップの無料時系列なし → 取得不可。
+quantinuum,Quantinuum,quantum,,,True,proxy,honeywell,非上場。親会社 Honeywell(HON) を代理指標とする。
+honeywell,Honeywell (Quantinuum 代理),quantum,HON,,False,proxy,,
+ionq,IonQ,quantum,IONQ,,False,verified,,
+dwave,D-Wave,quantum,QBTS,,False,verified,,
+rigetti,Rigetti,quantum,RGTI,,False,verified,,
+ibm,IBM,quantum,IBM,,False,verified,,

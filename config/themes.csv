@@ -1,0 +1,11 @@
+﻿key,name_ja,status,benchmark_key,note
+crypto_xrp,暗号資産 / XRP・XRPL,active,,
+ai_datacenter,AIデータセンター / 光通信,active,index_sox,
+semicap,半導体装置 / HBM / CoWoS / WFE,active,index_sox,
+robotics_fa,ロボティクス / FA / 減速機 / サーボ,active,index_sox,
+ev_physical_ai,EV / Physical AI / Tesla / Optimus,active,index_sox,
+quantum,量子コンピュータ,active,index_sox,
+china_ai,中国AI・Physical AI,active,index_sox,
+policy,政策・補助金・輸出規制・IPO,active,,
+power,電力(Utility CAPEX / Grid / Nuclear / SMR),active,,指標・保有銘柄は未整備(P1時点)。実データ源確保後にindicators.csv/instruments.csvへ追加する。
+bio,バイオ,watch,,優先度低。Phase移行/提携/プラットフォーム採用/商業化進捗を監視する枠のみ確保(ユーザー確認済み2026-07-04)。

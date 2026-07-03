@@ -1,5 +1,24 @@
 # config/
 
+## instruments.csv / indicators.csv / themes.csv (Investment OS Layer1/Layer3マスタ)
+
+`docs/investment_os_design.md` のマスタ外部化(フェーズP1)。正本はこの3ファイルで、
+`src/config.py` の `INSTRUMENTS`/`INDICATORS` は起動時に `src/registry/*.py` 経由で
+これらを読み込むだけになった(コード内に静的リストは残っていない)。
+
+- **instruments.csv**: 銘柄マスタ(Layer1)。列は `key,name_ja,layer,ticker,
+  coingecko_id,held,data_quality,proxy_key,note`。`proxy_key` は非上場銘柄の
+  価格代理(例: `quantinuum` → `honeywell`)。**銘柄追加はこのCSVへ1行足すだけ**で
+  yfinance取得・スコアリング・予測台帳まで自動的に伝播する。
+- **indicators.csv**: 指標辞書(Layer3)。列は `key,name_ja,layer,source,
+  data_quality,targets(;区切り),note,parquet_stem,column,loader,
+  step2_verifiable,freq`。重要度・観測性・鮮度SLAは手動採点せず
+  `src/registry/indicators.py` が `data_quality`/`freq` から機械的に導出する
+  (推測で断定しない、という既存方針を踏襲)。
+- **themes.csv**: テーマ(サイクル)マスタ。列は `key,name_ja,status,
+  benchmark_key,note`。`status=watch` は優先度低で監視のみ(例: バイオ)。
+  `benchmark_key` はLayer5(予測検証)が超過リターンを計算する際のベンチマーク指数。
+
 ## rss_sources.csv
 
 企業IR・政府機関のRSS/AtomフィードURLを登録する設定ファイル。**意図的に空の状態で

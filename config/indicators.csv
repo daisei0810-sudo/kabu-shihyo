@@ -1,0 +1,34 @@
+﻿key,name_ja,layer,source,data_quality,targets,note,parquet_stem,column,loader,step2_verifiable,freq
+xrp_price,XRP価格,crypto_xrp,coingecko,verified,xrp,,price_xrp,Close,,True,daily
+rlusd_supply,RLUSD発行残高,crypto_xrp,xrpl,verified,xrp,RLUSD発行体の gateway_balances(hexキー)。発行体は確定済み。日次1点ずつ蓄積中のため現状は30行未満でStep2は自動スキップされる。,xrpl_rlusd_supply,rlusd_supply,,True,daily
+xrpl_tx_count,XRPLトランザクション数,crypto_xrp,xrpl,verified,xrp,日次1点ずつ蓄積中のため現状は30行未満でStep2は自動スキップされる。,xrpl_network_stats,txn_count,,True,daily
+xrpl_success_payments,XRP成功Payment数,crypto_xrp,xrpl,verified,xrp,専用fetcher未実装(取得元データなし)。,,,,True,daily
+amm_tvl,AMM TVL,crypto_xrp,xrpl,verified,xrp,,defillama_xrpl_tvl,tvl_usd,,True,daily
+amm_xrp_balance,AMM内XRP残高,crypto_xrp,xrpl,verified,xrp,ロック需要スコアの中核(amm_info の XRP側残高)。日次1点ずつ蓄積中のため現状は30行未満でStep2は自動スキップされる。,xrpl_amm_XRP_RLUSD,xrp_balance,,True,daily
+xrpl_dex_volume,XRPL DEX出来高,crypto_xrp,xrpl,verified,xrp,専用fetcher未実装(取得元データなし)。,,,,True,daily
+xrp_pair_volume,XRP建てペア出来高,crypto_xrp,xrpl,verified,xrp,専用fetcher未実装(取得元データなし)。,,,,True,daily
+stablecoin_tvl,Stablecoin TVL,crypto_xrp,defillama,verified,xrp,,defillama_stablecoin_tvl,stablecoin_tvl_usd,,True,daily
+etf_flows,ETF資金流入,crypto_xrp,none,unavailable,xrp,日次クリーンな無料APIなし。ニュース推定(estimated)に降格可。,,,,True,daily
+exchange_xrp_balance,取引所XRP残高,crypto_xrp,none,unavailable,xrp,ラベル付き網羅データが無料で揃わない → 取得不可。,,,,True,daily
+whale_wallets,クジラウォレット動向,crypto_xrp,none,unavailable,xrp,,,,,True,daily
+lending_collateral,Lending/Collateral利用量,crypto_xrp,none,unavailable,xrp,,,,,True,daily
+institutional_defi,Institutional DeFi,crypto_xrp,none,unavailable,xrp,,,,,True,daily
+permissioned_dex,Permissioned DEX,crypto_xrp,none,unavailable,xrp,,,,,True,daily
+rwa_collateral,RWA担保利用,crypto_xrp,none,unavailable,xrp,,,,,True,daily
+mmf_tokenization,MMF/Treasury Tokenization,crypto_xrp,none,unavailable,xrp,,,,,True,daily
+nvidia_revenue,NVIDIA売上・ガイダンス,ai_datacenter,yfinance,verified,nvidia;fujikura,四半期5行のみ→Step2統計検証は不可能(過適合)。Extendedスコア専用。,capex_nvda,capex,,False,daily
+hyperscaler_capex,Hyperscaler CAPEX,ai_datacenter,yfinance,verified,fujikura;murata,MSFT/GOOGL/AMZN/META capex 合算。四半期5行のみ→Step2統計検証は不可能(過適合)。Extendedスコア専用。,capex_hyperscaler_total,hyperscaler_capex_total,,False,daily
+optical_module_demand,光モジュール需要,ai_datacenter,yfinance,proxy,fujikura;murata,フジクラ/住友/古河/村田の株価バスケットで代理(自己除外)。murataはhyperscaler_capexが検証不可のため、これが唯一のStep2検証可能な先行指標候補(ただしproxy=価格自己相関の側面あり)。,,,peer_basket:optical,True,daily
+optical_price_leadtime,光トランシーバー価格・納期,ai_datacenter,none,unavailable,fujikura,,,,,True,daily
+sox_index,SOX指数(WFEサイクル代理),semicap,yfinance,proxy,lasertec_rorze;kioxia,kioxiaは価格履歴373行(2024-12上場)と短く、長ラグは実効サンプルガードでC降格の見込み(履歴不足を隠さず表示)。,price_index_sox,Close,,True,daily
+tsmc_capex,TSMC CAPEX,semicap,yfinance,verified,lasertec_rorze,四半期5行のみ→Step2統計検証は不可能(過適合)。Extendedスコア専用。,capex_tsm,capex,,False,daily
+hbm_price,HBM価格・需給,semicap,none,unavailable,kioxia,,,,,True,daily
+cowos_utilization,CoWoS稼働率,semicap,none,unavailable,lasertec_rorze,,,,,True,daily
+bb_ratio,半導体装置 BBレシオ,semicap,none,unavailable,lasertec_rorze,SEMI BBレシオ生値は無料API無し。,,,,True,daily
+robotics_peer_basket,ロボティクス・ピアバスケット(自己除外),robotics_fa,yfinance,proxy,harmonic;fanuc;yaskawa,対象自身を除いたharmonic/fanuc/yaskawa/nabtescoの株価バスケット。セクター共通因子が先行しうるか検証するが、価格自己相関の側面が強くB以上は期待薄(C想定)。,,,peer_basket:robotics,True,daily
+usdjpy_level,ドル円(輸出採算),robotics_fa,yfinance,proxy,fanuc;yaskawa;harmonic,ファナック/安川は輸出比率が高く、円安が採算改善→株価に先行しうる。ただし為替は同時性が強く純先行は弱い(C想定)。,price_index_usdjpy,Close,,True,daily
+ism_mfg_pmi,ISM製造業PMI,robotics_fa,fred,verified,fanuc;yaskawa;harmonic,設備投資・FA需要の教科書的先行指標(50割れ/回復が数ヶ月先行)。FRED_API_KEY未設定時はデータなしで自動スキップ。月次(月60行程度)のため日次へffill変換して検証。ドメイン論理は最強だが月次制約でB〜C想定。,fred_ism_mfg_pmi,ism_mfg_pmi,,True,monthly
+durable_goods_orders,米耐久財受注,robotics_fa,fred,verified,fanuc;yaskawa,耐久財受注(コア資本財)は設備投資の先行指標。ロボット需要は耐久財投資の川下需要。FRED_API_KEY未設定時は自動スキップ。月次。,fred_durable_goods_orders,durable_goods_orders,,True,monthly
+china_mfg_pmi,中国製造業PMI(取得不可),robotics_fa,none,unavailable,fanuc;yaskawa,ファナック・安川の中国売上比率を踏まえると本来最重要の先行指標だが、財新(Caixin)中国PMI等の無料クリーン時系列が存在しないため取得不可。,,,,True,daily
+us10y_yield,米10年金利(割引率),ev_physical_ai,yfinance,proxy,tesla,長期キャッシュフロー期待の大きいグロース株で割引率感応度が高い。金利上昇がバリュエーション圧縮に先行しうるが、Tesla固有材料(納車台数/FSD/Optimus)の影響が支配的なためC想定。,price_index_us10y,Close,,True,daily
+quantum_peer_basket,量子ピュアプレイ・バスケット(HON除外),quantum,yfinance,proxy,quantinuum,ionq/dwave/rigetti/ibmのバスケット(honeywell除外、循環参照回避)。検証対象はHoneywell株価(Quantinuumの代理)。HONの量子事業比率は売上のごく一部のため相関がほぼ出ない可能性が高い(D〜C想定)。この検証自体が『Quantinuumの投資判断をHON株で近似することの限界』を定量的に示す価値がある。,,,peer_basket:quantum,True,daily

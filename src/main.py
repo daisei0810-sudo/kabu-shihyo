@@ -6,7 +6,8 @@
   python -m src.main --step 3     # Step3: スコアリングのみ
   python -m src.main --step 5     # Step5: 材料取込(SEC EDGAR+EDINET+RSS+手動入力。allには未含有)
   python -m src.main --step 6     # Step6: 通知パイプライン(§13/§17/§18)
-  python -m src.main --step all   # 全ステップ(1→2→3→6→4、5材料取込は含まない)
+  python -m src.main --step 7     # Step7: 予測台帳(Investment OS Layer5、最重要レイヤー)
+  python -m src.main --step all   # 全ステップ(1→2→3→7→6→4、5材料取込は含まない)
 
 環境変数:
   FRED_API_KEY          : FRED APIキー (未設定時はFREDスキップ)
@@ -111,6 +112,26 @@ def run_step3() -> None:
     logger.info("=" * 60)
 
 
+def run_step7() -> None:
+    """Step7: 予測台帳(Investment OS Layer5、最重要レイヤー)。Step3完了後に実行する。
+
+    当日の投資判断(現状はStep3の outlook/action)を予測として記帳し、3/6/12ヶ月後の
+    due_date到来分を実際の株価で評価する。3ヶ月後の答え合わせは今日記帳を始めないと
+    3ヶ月遅れるため、Layer2(シナリオ判定エンジン)が未完成でも稼働させる
+    (docs/investment_os_design.md §5 フェーズP1)。
+    """
+    logger.info("=" * 60)
+    logger.info("Step7: 予測台帳開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.prediction.pipeline import run_predictions
+    try:
+        run_predictions()
+    except Exception as exc:
+        logger.warning("予測台帳パイプライン失敗(後続ステップは継続実行): %s", exc)
+    logger.info("=" * 60)
+
+
 def run_step5() -> None:
     """Step5: 材料取込(SEC EDGAR + EDINET + RSS + 手動入力)。Phase6 基盤。
 
@@ -203,11 +224,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="先行指標監視システム")
     parser.add_argument(
         "--step",
-        choices=["1", "2", "3", "4", "5", "6", "all"],
+        choices=["1", "2", "3", "4", "5", "6", "7", "all"],
         default="1",
         help="実行するステップ (default: 1)。5(材料取込)は明示指定時のみ実行、"
-             "all には未含有(Phase6動作確認中のため)。6(通知)はallに含む。"
-             "all の実行順は 1→2→3→6→4",
+             "all には未含有(Phase6動作確認中のため)。6(通知)・7(予測台帳)はallに含む。"
+             "all の実行順は 1→2→3→7→6→4",
     )
     args = parser.parse_args()
 
@@ -225,6 +246,9 @@ def main() -> None:
 
     if args.step == "5":
         run_step5()
+
+    if args.step in ("7", "all"):
+        run_step7()
 
     if args.step in ("6", "all"):
         run_step6()
