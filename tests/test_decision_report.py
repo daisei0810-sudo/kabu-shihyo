@@ -6,11 +6,13 @@ import pandas as pd
 
 from src.decision.models import ConditionStatus, DecisionRecord, ScenarioAssessment
 from src.reporting.decision_report import (
+    _detect_signal_divergence,
     _fmt_axis,
     _fmt_pct,
     _section_change_log,
     _section_conclusion,
     _section_decisions,
+    _section_portfolio_signals,
     _section_prediction_accuracy,
     _section_theme_scores,
 )
@@ -131,3 +133,79 @@ class TestSectionConclusion:
         lines = _section_conclusion(records)
         joined = "\n".join(lines)
         assert "fujikura(売却)" in joined
+
+
+# ---------------------------------------------------------------------------
+# ポートフォリオシグナル(daily_report.pyから移設。①B: 非公開化に伴う移設)
+# ---------------------------------------------------------------------------
+
+
+class TestDetectSignalDivergence:
+    def test_bullish_outlook_with_bearish_dip_flags_divergence(self) -> None:
+        warning = _detect_signal_divergence("中立-強気", "売り時候補")
+        assert warning is not None
+        assert "中立-強気" in warning
+        assert "売り時候補" in warning
+
+    def test_strong_bullish_with_overheat_flags_divergence(self) -> None:
+        warning = _detect_signal_divergence("強気", "過熱警戒")
+        assert warning is not None
+
+    def test_bearish_outlook_with_bullish_dip_flags_divergence(self) -> None:
+        warning = _detect_signal_divergence("弱気", "強い押し目")
+        assert warning is not None
+
+    def test_aligned_bullish_no_divergence(self) -> None:
+        assert _detect_signal_divergence("強気", "押し目候補") is None
+
+    def test_neutral_outlook_no_divergence(self) -> None:
+        assert _detect_signal_divergence("中立", "売り時候補") is None
+
+    def test_no_dip_decision_no_divergence(self) -> None:
+        assert _detect_signal_divergence("強気", None) is None
+        assert _detect_signal_divergence("強気", "") is None
+
+    def test_hold_decision_no_divergence(self) -> None:
+        assert _detect_signal_divergence("中立-強気", "保有継続") is None
+
+
+class TestSectionPortfolioSignalsDivergenceIntegration:
+    def test_divergence_note_appears_when_signals_conflict(self) -> None:
+        signals = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "hard_score": None,
+            "extended_score": 97.1, "confidence_pct": 1.0, "outlook": "中立-強気",
+            "action": "保有継続(監視)",
+        }])
+        dipsell = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "decision": "売り時候補",
+        }])
+        lines = _section_portfolio_signals(signals, dipsell)
+        text = "\n".join(lines)
+        assert "シグナル相違" in text
+        assert "フジクラ" in text
+
+    def test_no_divergence_note_when_aligned(self) -> None:
+        signals = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "hard_score": None,
+            "extended_score": 97.1, "confidence_pct": 1.0, "outlook": "強気",
+            "action": "追加",
+        }])
+        dipsell = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "decision": "押し目候補",
+        }])
+        lines = _section_portfolio_signals(signals, dipsell)
+        text = "\n".join(lines)
+        assert "シグナル相違" not in text
+
+    def test_missing_dipsell_df_does_not_crash(self) -> None:
+        signals = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "hard_score": None,
+            "extended_score": 97.1, "confidence_pct": 1.0, "outlook": "中立-強気",
+            "action": "保有継続(監視)",
+        }])
+        lines = _section_portfolio_signals(signals, None)
+        assert len(lines) > 0
+
+    def test_empty_df_shows_placeholder(self) -> None:
+        lines = _section_portfolio_signals(pd.DataFrame())
+        assert any("なし" in line for line in lines)

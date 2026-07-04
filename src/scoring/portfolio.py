@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import OUTPUTS, Layer, held_instruments
+from src.config import OUTPUTS, PRIVATE_OUTPUTS, Layer, held_instruments
 from src.scoring.collapse_watch import CollapseWatchResult, compute_collapse_watch
 from src.scoring.cycle_scores import CycleScore, compute_cycle_scores
 from src.scoring.demand_index import (
@@ -40,6 +40,7 @@ from src.scoring.xrp_scores import XrpDemandResult, compute_xrp_lock_demand, com
 
 logger = logging.getLogger(__name__)
 OUTPUT_DIR = Path(OUTPUTS)
+PRIVATE_DIR = Path(PRIVATE_OUTPUTS)
 
 
 @dataclass
@@ -281,7 +282,14 @@ class PortfolioScorer:
         )
 
     def save_csv(self, result: PortfolioResult) -> None:
-        """ポートフォリオ結果を outputs/portfolio_signal_scores.csv に保存。"""
+        """ポートフォリオ結果を保存する。
+
+        保有銘柄ごとのスコア・outlook・actionは売買判断そのもの(§8確定事項)
+        のため private/portfolio_signal_scores.csv(gitignore対象)へ保存する。
+        XRP集計スコア(xrp_real_demand/xrp_lock_demand、個別銘柄の判断を含まない
+        市場指標)のみ outputs/xrp_demand_scores.csv として公開する。
+        """
+        PRIVATE_DIR.mkdir(parents=True, exist_ok=True)
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         rows = []
 
@@ -300,6 +308,18 @@ class PortfolioScorer:
                 "n_indicators": s.n_indicators,
             })
 
+        df = pd.DataFrame(rows)
+        path = PRIVATE_DIR / "portfolio_signal_scores.csv"
+        df.to_csv(path, index=False, encoding="utf-8-sig")
+        logger.info("saved(private): %s (%d rows)", path, len(df))
+        logger.info(
+            "Portfolio avg — Hard: %s / Extended: %s",
+            result.portfolio_hard_avg,
+            result.portfolio_extended_avg,
+        )
+
+        # --- XRP集計スコア CSV(公開。個別銘柄の売買判断を含まない市場指標) ---
+        xrp_rows = []
         for label, demand_result in [
             ("xrp_real_demand", result.xrp_real_demand),
             ("xrp_lock_demand", result.xrp_lock_demand),
@@ -312,31 +332,22 @@ class PortfolioScorer:
                 if label == "xrp_lock_demand" and dr.stage
                 else "XRP総合実需スコア"
             )
-            rows.append({
+            xrp_rows.append({
                 "target": label,
                 "name_ja": name,
                 "layer": "crypto_xrp",
-                "hard_score": dr.score,
-                "extended_score": dr.score,
+                "score": dr.score,
                 "confidence_pct": dr.confidence_pct,
                 "data_coverage_pct": dr.data_coverage_pct,
-                "outlook": "",
-                "action": "",
-                "signal_note": dr.note,
+                "note": dr.note,
                 "n_indicators": sum(1 for c in dr.components if c.available),
             })
+        if xrp_rows:
+            xrp_path = OUTPUT_DIR / "xrp_demand_scores.csv"
+            pd.DataFrame(xrp_rows).to_csv(xrp_path, index=False, encoding="utf-8-sig")
+            logger.info("saved: %s (%d rows)", xrp_path, len(xrp_rows))
 
-        df = pd.DataFrame(rows)
-        path = OUTPUT_DIR / "portfolio_signal_scores.csv"
-        df.to_csv(path, index=False, encoding="utf-8-sig")
-        logger.info("saved: %s (%d rows)", path, len(df))
-        logger.info(
-            "Portfolio avg — Hard: %s / Extended: %s",
-            result.portfolio_hard_avg,
-            result.portfolio_extended_avg,
-        )
-
-        # --- テクニカルスコア CSV ---
+        # --- テクニカルスコア CSV(非公開。個別銘柄のテクニカル判定) ---
         if result.technicals:
             tech_rows = [
                 {
@@ -352,11 +363,11 @@ class PortfolioScorer:
                 }
                 for t in result.technicals
             ]
-            tech_path = OUTPUT_DIR / "technical_scores.csv"
+            tech_path = PRIVATE_DIR / "technical_scores.csv"
             pd.DataFrame(tech_rows).to_csv(tech_path, index=False, encoding="utf-8-sig")
-            logger.info("saved: %s (%d rows)", tech_path, len(tech_rows))
+            logger.info("saved(private): %s (%d rows)", tech_path, len(tech_rows))
 
-        # --- 押し目・売り時判定 CSV (簡易版・Phase8暫定) ---
+        # --- 押し目・売り時判定 CSV(非公開。簡易版・Phase8暫定) ---
         if result.dip_sell:
             ds_rows = [
                 {
@@ -372,9 +383,9 @@ class PortfolioScorer:
                 }
                 for d in result.dip_sell
             ]
-            ds_path = OUTPUT_DIR / "dip_sell_scores.csv"
+            ds_path = PRIVATE_DIR / "dip_sell_scores.csv"
             pd.DataFrame(ds_rows).to_csv(ds_path, index=False, encoding="utf-8-sig")
-            logger.info("saved: %s (%d rows)", ds_path, len(ds_rows))
+            logger.info("saved(private): %s (%d rows)", ds_path, len(ds_rows))
 
         # --- マクロ指標 CSV ---
         if result.macro:

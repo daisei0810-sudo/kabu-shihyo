@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import DATA_PROCESSED, INSTRUMENTS, OUTPUTS
+from src.config import DATA_PROCESSED, INSTRUMENTS, OUTPUTS, PRIVATE_OUTPUTS
 from src.notifications.backtest_eval import (
     create_pending_backtests,
     evaluate_due_backtests,
@@ -46,12 +46,13 @@ from src.scoring.score_history import compute_score_change
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path(OUTPUTS)
+PRIVATE_DIR = Path(PRIVATE_OUTPUTS)
 PROCESSED_DIR = Path(DATA_PROCESSED)
 _LAYER_BY_TICKER: dict[str, str] = {i.key: i.layer.value for i in INSTRUMENTS}
 
 
-def _load_csv(name: str) -> pd.DataFrame | None:
-    path = OUTPUT_DIR / name
+def _load_csv(name: str, base_dir: Path = OUTPUT_DIR) -> pd.DataFrame | None:
+    path = base_dir / name
     if not path.exists():
         return None
     try:
@@ -83,9 +84,9 @@ def run_notifications(today: date | None = None) -> BacktestSummary:
     # --- ①前回判断履歴を読込(当日分で上書きされる前に) ---
     prev_decisions = load_previous_decisions(as_of=d)
 
-    # --- ②当日CSV読込 ---
-    signals_df = _load_csv("portfolio_signal_scores.csv")
-    dipsell_df = _load_csv("dip_sell_scores.csv")
+    # --- ②当日CSV読込(保有銘柄ごとの判断を含む2つはprivate/から読む) ---
+    signals_df = _load_csv("portfolio_signal_scores.csv", PRIVATE_DIR)
+    dipsell_df = _load_csv("dip_sell_scores.csv", PRIVATE_DIR)
     demand_df = _load_csv("demand_index_scores.csv")
     cycles_df = _load_csv("cycle_scores.csv")
     collapse_df = _load_csv("collapse_watch.csv")

@@ -23,6 +23,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 保有銘柄ごとの投資判断(Layer2)・予測台帳等はpublicな本リポジトリと分離した
+      # 専用privateリポジトリ(daisei0810-sudo/kabu-shihyo-private)で永続化する
+      # (docs/investment_os_design.md §8確定事項)。PRIVATE_REPO_PAT未設定時はスキップし、
+      # private/はジョブ内の揮発ディレクトリとして動作する(判断変更ログ等の
+      # 「前回比較」機能はその回だけ無効になるが、処理自体はクラッシュしない)。
+      - name: Checkout private data repo
+        if: ${{ secrets.PRIVATE_REPO_PAT != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: daisei0810-sudo/kabu-shihyo-private
+          token: ${{ secrets.PRIVATE_REPO_PAT }}
+          path: private
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -37,12 +50,29 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
 
+      # Step9(意思決定エンジン)はprivateリポジトリでの永続化が確認できた場合のみ
+      # 自動実行する。永続化が無い状態で毎日実行しても「前回比較」が機能せず
+      # 無意味なため。
+      - name: Run Step9 (decision engine)
+        if: ${{ secrets.PRIVATE_REPO_PAT != '' }}
+        run: python -m src.main --step 9
+
       - name: Commit data and outputs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ outputs/
           git diff --cached --quiet || git commit -m "chore: daily update $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: Commit and push private data
+        if: ${{ secrets.PRIVATE_REPO_PAT != '' }}
+        working-directory: private
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: private daily update $(date -u +%Y-%m-%d)"
           git push
 
       - uses: actions/upload-pages-artifact@v3

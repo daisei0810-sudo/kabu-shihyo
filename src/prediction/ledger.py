@@ -1,6 +1,6 @@
 """予測台帳への記帳(Step7前半)。
 
-record_from_snapshot(): Step3出力(outputs/portfolio_signal_scores.csv)のoutlook/
+record_from_snapshot(): Step3出力(private/portfolio_signal_scores.csv)のoutlook/
 actionをそのまま記帳する最小版(Investment OS Layer5、docs/investment_os_design.md
 §5フェーズP1)。Layer2が未稼働のテーマ・銘柄のフォールバックとして引き続き有効。
 
@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import INSTRUMENTS, OUTPUTS
+from src.config import INSTRUMENTS, PRIVATE_OUTPUTS
 from src.decision.models import DecisionRecord
 from src.prediction.models import Evaluation, Prediction
 from src.prediction.prices import PROCESSED_DIR, price_at_or_before, resolve_price_series
@@ -33,8 +33,8 @@ from src.registry.themes import benchmark_for
 
 logger = logging.getLogger(__name__)
 
-OUTPUT_DIR = Path(OUTPUTS)
-SIGNALS_CSV = OUTPUT_DIR / "portfolio_signal_scores.csv"
+PRIVATE_DIR = Path(PRIVATE_OUTPUTS)
+SIGNALS_CSV = PRIVATE_DIR / "portfolio_signal_scores.csv"
 
 # 保有・非保有を問わずconfig.INSTRUMENTSに登録された銘柄keyのみ予測対象とする。
 # xrp_real_demand/xrp_lock_demand等の集計行(銘柄ではない)を除外するため。

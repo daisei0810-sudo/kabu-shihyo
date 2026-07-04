@@ -444,11 +444,13 @@ P2スコープ(L4 6軸ルーブリック・L2シナリオ判定エンジン・L1
 | L2 `src/decision/` | ✅完了(`--step 9`、`all`には未含有) | `config/scenarios/*.yaml`は現状全指標がC/Dランク(統計未実証)のため、`config/scenarios/generate.py`がdz(勢いZスコア)符号ベースで機械生成した暫定シナリオ。売買アクション自体は既存`_map_decision()`のスコアベース判定をそのまま使い、L2語彙への変換+シナリオ開示を追加しただけ(判断ロジック不変) |
 | L2→L5 push型記帳 | ✅完了 | `prediction/ledger.record_from_decisions()`。prediction_id採番方式を共通化し、同日にdecisionが実行されればsnapshot版をupsertで自然に上書き |
 | L10 非公開レポート | ✅完了(`private/decision_report.md`) | §8確定事項により公開`daily_report.md`とは別ファイル。DecisionRecordの必須6項目・判断変更ログ・予測検証成績を含む。リスク(L6)・配分(L9)・発掘(L7-8)は未実装セクションとして明示 |
-| §8確定事項「公開範囲分離」 | ⚠️一部対応 | L2 DecisionRecordの新規出力は`private/`(gitignore対象)に分離済み。ただし**既存の`outputs/portfolio_signal_scores.csv`等(P2着手前から公開)は変更していない** — 保有銘柄ごとのoutlook/actionは引き続き公開リポジトリに残る。完全分離にはこれらの扱いを別途決める必要がある |
-| `private/`の永続化方式 | ❌未確定 | gitignore対象のため日次自動実行(CI)では前日データが引き継がれない(diffが常に「初回」扱いになる)。ローカル実行では蓄積される。解消には専用private repo等が必要 — Step9を`--step all`に含めない理由 |
+| §8確定事項「公開範囲分離」 | ✅完了(2026-07-05追加対応) | 当初P2コミット時点では既存の`outputs/portfolio_signal_scores.csv`等(P2着手前から公開)を変更しておらず不完全だったが、ユーザー確認の上で追加対応。`portfolio_signal_scores.csv`・`technical_scores.csv`・`dip_sell_scores.csv`・`notifications/`・`history/decisions/`・予測台帳(`data/predictions/`→`private/predictions/`)を全て`private/`へ移設。公開`outputs/`にはXRP集計スコア(`xrp_demand_scores.csv`)等、個別銘柄の判断を含まない集計指標のみ残す。`daily_report.md`/`dashboard`から該当セクションを削除し、`decision_report.py`(非公開)へ統合 |
+| `private/`の永続化方式 | ✅完了 | 専用リポジトリ[daisei0810-sudo/kabu-shihyo-private](https://github.com/daisei0810-sudo/kabu-shihyo-private)を作成(gh repo create、privateで作成済み、mainブランチ初期化済み)。`daily.yml`に`actions/checkout`で`private/`へチェックアウトし、実行後に別リポジトリへコミット・pushするステップを追加。`PRIVATE_REPO_PAT`シークレット未設定時は揮発ディレクトリとして動作(クラッシュしない)。**シークレット登録はユーザー側の手動作業が必要**(PAT発行はブラウザ操作のため代行不可) |
 
 ### P2で新規追加した仕組み
 
 - `config/structural_scores.csv`: テーマ構造変化スコアの手動評価(月次、空でコミット。rss_sources.csvと同じ「意図的に空」パターン)
 - `config/scenarios/generate.py`: indicators.csvからシナリオYAMLを再生成する一回限りでないツール(指標追加・検証ランク改善時に再実行想定)
 - Layer2の action 語彙(新規買い/追加買い/保有継続/一部利確/売却)と、既存の6分類outlook/action語彙とのマッピングは `src/decision/taxonomy.py::LEGACY_ACTION_TO_L2` に集約
+- `PRIVATE_OUTPUTS`定数(`src/config.py`)を追加し、`private/`配下への出力先を一元管理
+- 予測台帳(Layer5)は当初publicの`data/predictions/`だったが、①Bとの整合のため`private/predictions/`へ全面移設(公開のsnapshot専用trackは①Bの前提と矛盾するため採用せず)

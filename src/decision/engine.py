@@ -1,6 +1,6 @@
 """Layer2 意思決定エンジン — シナリオ評価 + DecisionRecord生成。
 
-`outputs/portfolio_signal_scores.csv`(Step3出力)を入力契約として読み、
+`private/portfolio_signal_scores.csv`(Step3出力、非公開)を入力契約として読み、
 既存 `scoring.portfolio._map_decision()` と同一のスコアベース判定ロジックを
 そのまま使う。シナリオ(bull/neutral/bear)の成立率は判断の構造化開示として
 付加するのみで、判断そのものを差し替えない。
@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import INSTRUMENTS, OUTPUTS
+from src.config import INSTRUMENTS, OUTPUTS, PRIVATE_OUTPUTS
 from src.decision.assessment import assess_scenario
 from src.decision.conditions import PROCESSED_DIR
 from src.decision.models import DecisionRecord, ScenarioAssessment
@@ -27,7 +27,8 @@ from src.decision.taxonomy import LEGACY_ACTION_TO_L2
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path(OUTPUTS)
-SIGNALS_CSV = OUTPUT_DIR / "portfolio_signal_scores.csv"
+PRIVATE_DIR = Path(PRIVATE_OUTPUTS)
+SIGNALS_CSV = PRIVATE_DIR / "portfolio_signal_scores.csv"
 THEME_SCORES_CSV = OUTPUT_DIR / "theme_scores.csv"
 
 _INSTRUMENT_KEYS: frozenset[str] = frozenset(i.key for i in INSTRUMENTS)

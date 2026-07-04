@@ -1,8 +1,10 @@
 """predictions.jsonl / evaluations.jsonl の永続化。
 
-notifications/store.py と同じ思想: 単純な追記ログのためSQLiteは使わずJSONL単体で
-完結させる。正本はgit管理し、決定的シリアライズ(id昇順ソート・キー順固定・
-1行1レコード)でdiffをクリーンに保つ。
+保有銘柄ごとの判断(judgment)を含むため private/predictions/ (gitignore対象)へ
+保存する(docs/investment_os_design.md §8確定事項)。notifications/store.py と
+同じ思想: 単純な追記ログのためSQLiteは使わずJSONL単体で完結させる。決定的
+シリアライズ(id昇順ソート・キー順固定・1行1レコード)でdiffをクリーンに保つ
+(非公開だが、ローカルでの差分確認やprivateリポジトリへの移行を見据えて維持)。
 """
 
 from __future__ import annotations
@@ -13,8 +15,8 @@ from pathlib import Path
 
 from src.prediction.models import Evaluation, Prediction
 
-PREDICTIONS_PATH = "data/predictions/predictions.jsonl"
-EVALUATIONS_PATH = "data/predictions/evaluations.jsonl"
+PREDICTIONS_PATH = "private/predictions/predictions.jsonl"
+EVALUATIONS_PATH = "private/predictions/evaluations.jsonl"
 
 
 def _write_jsonl(path: Path, records: list[dict], sort_key: str) -> None:

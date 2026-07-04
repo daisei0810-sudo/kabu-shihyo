@@ -26,7 +26,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import OUTPUTS
+from src.config import OUTPUTS, PRIVATE_OUTPUTS
 from src.decision.diff import diff
 from src.decision.models import DecisionRecord
 from src.decision.store import PRIVATE_DECISIONS_DIR, load_decisions, load_previous
@@ -34,14 +34,14 @@ from src.decision.store import PRIVATE_DECISIONS_DIR, load_decisions, load_previ
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path(OUTPUTS)
-PRIVATE_DIR = Path("private")
+PRIVATE_DIR = Path(PRIVATE_OUTPUTS)
 
 _SCENARIO_LABEL: dict[str, str] = {"bull": "強気", "neutral": "中立", "bear": "弱気"}
 _SCENARIO_ICON: dict[str, str] = {"bull": "🟢", "neutral": "⚪", "bear": "🔴"}
 
 
-def _load_csv(name: str) -> pd.DataFrame:
-    path = OUTPUT_DIR / name
+def _load_csv(name: str, base_dir: Path = OUTPUT_DIR) -> pd.DataFrame:
+    path = base_dir / name
     if not path.exists():
         return pd.DataFrame()
     try:
@@ -149,6 +149,214 @@ def _section_risk() -> list[str]:
         "*未実装(docs/investment_os_design.md フェーズP3で対応予定)。"
         "現状は既存の「AIサイクル崩壊先行警戒」(公開daily_report.md参照)のみ。*", "",
     ]
+
+
+# ---------------------------------------------------------------------------
+# ポートフォリオ詳細(daily_report.pyから移設。保有銘柄ごとのスコア/判断のため非公開)
+# ---------------------------------------------------------------------------
+
+_OUTLOOK_ICON: dict[str, str] = {
+    "強気": "🟢", "中立-強気": "🟡", "中立(要確認)": "🟡",
+    "中立-弱気": "🟠", "中立": "⚪", "弱気": "🔴", "不明": "❓",
+}
+
+
+def _outlook_icon(outlook: str) -> str:
+    for key, icon in _OUTLOOK_ICON.items():
+        if key in outlook:
+            return icon
+    return "⚪"
+
+
+_BULLISH_OUTLOOKS: frozenset[str] = frozenset({"強気", "中立-強気"})
+_BEARISH_OUTLOOKS: frozenset[str] = frozenset({"弱気", "中立-弱気"})
+_BEARISH_DIP_DECISIONS: frozenset[str] = frozenset({"売り時候補", "過熱警戒"})
+_BULLISH_DIP_DECISIONS: frozenset[str] = frozenset({"強い押し目", "押し目候補"})
+
+
+def _detect_signal_divergence(outlook: str, dip_decision: str | None) -> str | None:
+    """ポートフォリオシグナル(実需/セクター系)と押し目・売り時判定(自社株価テクニカル系)が
+    逆方向を示している場合に警告文を返す。
+
+    両者は異なる入力(前者=proxy/セクター指標のパーセンタイル、後者=自社株価の
+    RSI/MA乖離)を見ているため、一致しないこと自体は異常ではない。だが並べて
+    表示すると矛盾に見えるため、無理に一致させず「見ている指標が違う」ことを明示する。
+    """
+    if not dip_decision:
+        return None
+    if (outlook in _BULLISH_OUTLOOKS and dip_decision in _BEARISH_DIP_DECISIONS) or (
+        outlook in _BEARISH_OUTLOOKS and dip_decision in _BULLISH_DIP_DECISIONS
+    ):
+        return (
+            f"⚠️ ポートフォリオシグナルは「{outlook}」だが、押し目・売り時判定は"
+            f"「{dip_decision}」。実需/セクター系スコアと自社株価のテクニカルが"
+            "逆方向 — 詳細は「押し目・売り時判定」セクション参照。"
+        )
+    return None
+
+
+def _section_portfolio_signals(
+    df: pd.DataFrame, dipsell_df: pd.DataFrame | None = None,
+) -> list[str]:
+    lines: list[str] = ["## ポートフォリオ シグナル", ""]
+    if df.empty or "target" not in df.columns:
+        lines += ["*private/portfolio_signal_scores.csv なし(Step3未実行)*", ""]
+        return lines
+    portfolio = df.copy()
+
+    dip_decision_by_target: dict[str, str] = {}
+    if dipsell_df is not None and not dipsell_df.empty and "target" in dipsell_df.columns:
+        dip_decision_by_target = dict(
+            zip(dipsell_df["target"], dipsell_df.get("decision", ""), strict=False)
+        )
+
+    lines.append("| 銘柄 | Hard | Extended | Confidence | Outlook | Action |")
+    lines.append("|------|-----:|---------:|:----------:|---------|--------|")
+    divergences: list[str] = []
+    for _, row in portfolio.iterrows():
+        outlook = str(row.get("outlook", ""))
+        icon = _outlook_icon(outlook)
+        target = str(row.get("target", ""))
+        name_ja = str(row.get("name_ja", target))
+        lines.append(
+            f"| {name_ja} "
+            f"| {_fmt_axis(row.get('hard_score'))} "
+            f"| {_fmt_axis(row.get('extended_score'))} "
+            f"| {_fmt_pct(row.get('confidence_pct'))} "
+            f"| {icon} {outlook} "
+            f"| {row.get('action', '--')} |"
+        )
+        warning = _detect_signal_divergence(outlook, dip_decision_by_target.get(target))
+        if warning:
+            divergences.append(f"**{name_ja}**: {warning}")
+
+    hard_avg = portfolio["hard_score"].dropna().mean()
+    ext_avg = portfolio["extended_score"].dropna().mean()
+    lines.append("")
+    lines.append(
+        f"**ポートフォリオ平均** — Hard: {_fmt_axis(hard_avg)} / Extended: {_fmt_axis(ext_avg)}"
+    )
+    lines.append("")
+
+    if divergences:
+        lines.append(f"<details><summary>⚠️ シグナル相違あり({len(divergences)}件)</summary>")
+        lines.append("")
+        for d in divergences:
+            lines.append(f"- {d}")
+        lines.append("")
+        lines.append("</details>")
+        lines.append("")
+
+    return lines
+
+
+_TECH_ICON: dict[str, str] = {
+    "強い押し目候補": "🟢", "押し目候補": "🟡", "中立": "⚪",
+    "過熱警戒": "🟠", "強い過熱警戒": "🔴", "データ不足": "❓", "不明": "❓",
+}
+
+
+def _section_technicals(tech: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## テクニカル判定 (RSI・移動平均乖離)", ""]
+    if tech is None or tech.empty:
+        lines += ["*private/technical_scores.csv なし(Step3未実行)*", ""]
+        return lines
+
+    def _icon(outlook: str) -> str:
+        for k, ic in _TECH_ICON.items():
+            if k in outlook:
+                return ic
+        return "⚪"
+
+    lines.append("| 銘柄 | RSI | 25MA乖離 | 200MA乖離 | 判定 |")
+    lines.append("|------|----:|--------:|---------:|------|")
+    for _, row in tech.iterrows():
+        rsi = _fmt_axis(row.get("rsi"))
+        d25 = f"{float(row.get('ma25_dev')):+.1f}%" if pd.notna(row.get("ma25_dev")) else "--"
+        d200 = f"{float(row.get('ma200_dev')):+.1f}%" if pd.notna(row.get("ma200_dev")) else "--"
+        out = str(row.get("tech_outlook", "--"))
+        icon = _icon(out)
+        lines.append(
+            f"| {row.get('name_ja', row.get('target',''))} "
+            f"| {rsi} | {d25} | {d200} | {icon} {out} |"
+        )
+    lines.append("")
+    lines.append("> RSI<30 + 200MA乖離<-10% = 強い押し目候補  "
+                 "| RSI>70 + 200MA乖離>+20% = 強い過熱警戒")
+    lines.append("")
+    return lines
+
+
+_DIP_DECISION_ICON: dict[str, str] = {
+    "強い押し目": "🟢", "押し目候補": "🟡", "保有継続": "⚪",
+    "過熱警戒": "🟠", "売り時候補": "🔴", "不明": "❓",
+}
+
+
+def _section_dip_sell(ds: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## 押し目・売り時判定 (簡易版・暫定)", ""]
+    lines.append(
+        "> ⚠️ 材料データ(ガイダンス修正・受注残変化等)は未反映の暫定版。"
+        "テクニカル指標(RSI/MA乖離)とHard/Extendedスコアのみで近似。"
+    )
+    lines.append("")
+    if ds is None or ds.empty:
+        lines += ["*private/dip_sell_scores.csv なし(Step3未実行)*", ""]
+        return lines
+
+    lines.append("| 銘柄 | dip_score | sell_score | hold_score | 判定 | 推奨アクション |")
+    lines.append("|------|----------:|-----------:|-----------:|------|---------------|")
+    for _, row in ds.iterrows():
+        dip = _fmt_axis(row.get("dip_score"))
+        sell = _fmt_axis(row.get("sell_score"))
+        hold = _fmt_axis(row.get("hold_score"))
+        dec = str(row.get("decision", "--"))
+        icon = _DIP_DECISION_ICON.get(dec, "⚪")
+        lines.append(
+            f"| {row.get('name_ja', row.get('target',''))} "
+            f"| {dip} | {sell} | {hold} "
+            f"| {icon} {dec} | {row.get('recommended_action', '--')} |"
+        )
+    lines.append("")
+    return lines
+
+
+_TRIGGER_ICON: dict[str, str] = {
+    "dip": "🟢", "sell": "🔴", "demand_index": "🔵", "ai_bubble": "🟠",
+    "collapse": "🚨", "decision_change": "🟡", "capex": "🟣", "material": "📰",
+}
+
+
+def _section_notifications() -> list[str]:
+    """通知(prev/curr judgmentを含むため非公開)。private/notifications/を読む。"""
+    lines: list[str] = ["## 🔔 本日の通知", ""]
+    try:
+        from src.notifications.store import load_notifications
+        notifications = [n for n in load_notifications() if n.status == "active"]
+    except Exception as exc:
+        logger.warning("notifications load failed: %s", exc)
+        lines += ["*通知データなし (Step6 未実行)*", ""]
+        return lines
+
+    lines[0] = f"## 🔔 本日の通知 ({len(notifications)}件)"
+    if not notifications:
+        lines += ["*本日、通知条件を満たす変化はありませんでした*", ""]
+        return lines
+
+    for n in notifications:
+        icon = _TRIGGER_ICON.get(n.trigger_type, "🔔")
+        title = n.name_ja or n.target or n.trigger_type
+        if n.prev_judgment and n.curr_judgment:
+            headline = f"{icon} [{title}] 判断変更: {n.prev_judgment} → {n.curr_judgment}"
+        else:
+            headline = f"{icon} [{title}] {n.change_reason}"
+        lines.append(f"### {headline}")
+        lines.append("")
+        lines.append(f"- 通知日時: {n.notified_at}")
+        lines.append(f"- 理由: {n.change_reason}")
+        lines.append("")
+
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -304,12 +512,19 @@ def generate_decision_report(as_of: date | None = None) -> str:
     prev = load_previous(d, PRIVATE_DECISIONS_DIR)
     theme_scores_df = _load_csv("theme_scores.csv")
     acc_df = _load_csv("prediction_accuracy.csv")
+    signals_df = _load_csv("portfolio_signal_scores.csv", PRIVATE_DIR)
+    tech_df = _load_csv("technical_scores.csv", PRIVATE_DIR)
+    ds_df = _load_csv("dip_sell_scores.csv", PRIVATE_DIR)
 
     lines: list[str] = []
     lines.extend(_section_header(d))
+    lines.extend(_section_notifications())
     lines.extend(_section_early_signal(theme_scores_df))
     lines.extend(_section_theme_scores(theme_scores_df))
     lines.extend(_section_risk())
+    lines.extend(_section_portfolio_signals(signals_df, ds_df))
+    lines.extend(_section_technicals(tech_df))
+    lines.extend(_section_dip_sell(ds_df))
     lines.extend(_section_decisions(records))
     lines.extend(_section_change_log(records, prev))
     lines.extend(_section_prediction_accuracy(acc_df))

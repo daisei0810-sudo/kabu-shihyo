@@ -49,6 +49,18 @@ data/materials.db-wal
 # 実データに対する動作を確認してから、永続化方式(専用private repo等)を決める)。
 private/
 
+# 予測台帳(Layer5)も保有銘柄ごとの判断を含むため private/predictions/ へ移設した。
+# 旧パス(data/predictions/)は正本ではなくなったが、移行直後にローカルへ残る
+# 可能性があるため誤コミット防止に明示的にignoreする。
+data/predictions/
+
+# 同様に、以下は private/ へ移設済みの旧パス(誤って再生成されても誤コミット防止)。
+outputs/portfolio_signal_scores.csv
+outputs/technical_scores.csv
+outputs/dip_sell_scores.csv
+outputs/notifications/
+outputs/history/decisions/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

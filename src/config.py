@@ -189,6 +189,11 @@ DATA_PROCESSED = "data/processed"
 OUTPUTS = "outputs"
 CHARTS = "outputs/charts"
 
+# 保有銘柄ごとの売買判断・スコアを含む非公開出力(gitignore対象)。
+# docs/investment_os_design.md §8確定事項: outputsは公開リポジトリ+GitHub Pagesへ
+# 常時デプロイされるため、保有情報・判断そのものはここへ分離する。
+PRIVATE_OUTPUTS = "private"
+
 # 材料DB(Phase5) — 正本は MATERIALS_DUMP_DIR 配下の JSONL。
 # MATERIALS_DB は実行毎に JSONL から再構築される揮発キャッシュ(gitignore対象)。
 MATERIALS_DB = "data/materials.db"

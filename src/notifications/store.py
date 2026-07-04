@@ -4,6 +4,10 @@ materials.py と異なり、notifications は関係(グラフ)を持たない単
 SQLiteは使わずJSONL単体で完結させる(機構を軽くする設計判断)。
 JSONLの決定的シリアライズ(id昇順ソート・キー順固定・1行1レコード)は
 materials/db.py と同じ思想を踏襲し、git diffがクリーンになるようにする。
+
+通知は保有銘柄ごとの判断変化(prev_judgment/curr_judgment)を含むため、
+outputs/ではなくprivate/(gitignore対象)配下に保存する
+(docs/investment_os_design.md §8確定事項)。
 """
 
 from __future__ import annotations
@@ -14,8 +18,8 @@ from pathlib import Path
 
 from src.notifications.models import Backtest, Notification
 
-NOTIFICATIONS_PATH = "outputs/notifications/notifications.jsonl"
-BACKTESTS_PATH = "outputs/notifications/backtests.jsonl"
+NOTIFICATIONS_PATH = "private/notifications/notifications.jsonl"
+BACKTESTS_PATH = "private/notifications/backtests.jsonl"
 
 
 def _write_jsonl(path: Path, records: list[dict], sort_key: str) -> None:
