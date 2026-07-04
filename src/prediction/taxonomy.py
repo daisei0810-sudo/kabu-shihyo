@@ -27,8 +27,19 @@ ACTION_DIRECTION: dict[str, int] = {
     "要確認": 0,   # スコア算出不可 = 方向の主張なし
 }
 
+# Layer2(src.decision)の5分類語彙 → 期待方向。ACTION_DIRECTIONと役割は同じだが、
+# Layer2稼働後は source_layer="decision" のPredictionがこちらを使う
+# (§4.6(e): Backtest/evaluationsのカラム名は揃えたまま、判断語彙の移行のみ行う)。
+L2_ACTION_DIRECTION: dict[str, int] = {
+    "新規買い": 1,
+    "追加買い": 1,
+    "保有継続": 0,
+    "一部利確": -1,
+    "売却": -1,
+}
+
 # 「上昇/下落を言い当てたか」を評価できるのは方向性のある判断のみ。
 # 中立(0)は的中/不的中の概念が無意味なため direction_hit は None とする。
 DIRECTIONAL_JUDGMENTS: frozenset[str] = frozenset(
     k for k, v in ACTION_DIRECTION.items() if v != 0
-)
+) | frozenset(k for k, v in L2_ACTION_DIRECTION.items() if v != 0)

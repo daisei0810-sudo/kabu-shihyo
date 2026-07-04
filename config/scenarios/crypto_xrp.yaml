@@ -1,0 +1,198 @@
+theme: crypto_xrp
+_generated_by: config/scenarios/generate.py (dz符号ベースの機械生成、統計未実証の暫定シナリオ)
+scenarios:
+  bull:
+    conditions:
+    - id: xrp_price_dz_bull
+      desc: xrp_price の勢い(21日変化率Zスコア)が>0.0
+      indicator: xrp_price
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: rlusd_supply_dz_bull
+      desc: rlusd_supply の勢い(21日変化率Zスコア)が>0.0
+      indicator: rlusd_supply
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: xrpl_tx_count_dz_bull
+      desc: xrpl_tx_count の勢い(21日変化率Zスコア)が>0.0
+      indicator: xrpl_tx_count
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: xrpl_success_payments_dz_bull
+      desc: xrpl_success_payments の勢い(21日変化率Zスコア)が>0.0
+      indicator: xrpl_success_payments
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: amm_tvl_dz_bull
+      desc: amm_tvl の勢い(21日変化率Zスコア)が>0.0
+      indicator: amm_tvl
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: amm_xrp_balance_dz_bull
+      desc: amm_xrp_balance の勢い(21日変化率Zスコア)が>0.0
+      indicator: amm_xrp_balance
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: xrpl_dex_volume_dz_bull
+      desc: xrpl_dex_volume の勢い(21日変化率Zスコア)が>0.0
+      indicator: xrpl_dex_volume
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: xrp_pair_volume_dz_bull
+      desc: xrp_pair_volume の勢い(21日変化率Zスコア)が>0.0
+      indicator: xrp_pair_volume
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: stablecoin_tvl_dz_bull
+      desc: stablecoin_tvl の勢い(21日変化率Zスコア)が>0.0
+      indicator: stablecoin_tvl
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+  neutral:
+    conditions:
+    - id: xrp_price_dz_neutral
+      desc: xrp_price の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: xrp_price
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: rlusd_supply_dz_neutral
+      desc: rlusd_supply の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: rlusd_supply
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: xrpl_tx_count_dz_neutral
+      desc: xrpl_tx_count の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: xrpl_tx_count
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: xrpl_success_payments_dz_neutral
+      desc: xrpl_success_payments の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: xrpl_success_payments
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: amm_tvl_dz_neutral
+      desc: amm_tvl の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: amm_tvl
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: amm_xrp_balance_dz_neutral
+      desc: amm_xrp_balance の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: amm_xrp_balance
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: xrpl_dex_volume_dz_neutral
+      desc: xrpl_dex_volume の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: xrpl_dex_volume
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: xrp_pair_volume_dz_neutral
+      desc: xrp_pair_volume の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: xrp_pair_volume
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: stablecoin_tvl_dz_neutral
+      desc: stablecoin_tvl の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: stablecoin_tvl
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+  bear:
+    conditions:
+    - id: xrp_price_dz_bear
+      desc: xrp_price の勢い(21日変化率Zスコア)が<0.0
+      indicator: xrp_price
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: rlusd_supply_dz_bear
+      desc: rlusd_supply の勢い(21日変化率Zスコア)が<0.0
+      indicator: rlusd_supply
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: xrpl_tx_count_dz_bear
+      desc: xrpl_tx_count の勢い(21日変化率Zスコア)が<0.0
+      indicator: xrpl_tx_count
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: xrpl_success_payments_dz_bear
+      desc: xrpl_success_payments の勢い(21日変化率Zスコア)が<0.0
+      indicator: xrpl_success_payments
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: amm_tvl_dz_bear
+      desc: amm_tvl の勢い(21日変化率Zスコア)が<0.0
+      indicator: amm_tvl
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: amm_xrp_balance_dz_bear
+      desc: amm_xrp_balance の勢い(21日変化率Zスコア)が<0.0
+      indicator: amm_xrp_balance
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: xrpl_dex_volume_dz_bear
+      desc: xrpl_dex_volume の勢い(21日変化率Zスコア)が<0.0
+      indicator: xrpl_dex_volume
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: xrp_pair_volume_dz_bear
+      desc: xrp_pair_volume の勢い(21日変化率Zスコア)が<0.0
+      indicator: xrp_pair_volume
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: stablecoin_tvl_dz_bear
+      desc: stablecoin_tvl の勢い(21日変化率Zスコア)が<0.0
+      indicator: stablecoin_tvl
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0

@@ -1,0 +1,72 @@
+theme: ai_datacenter
+_generated_by: config/scenarios/generate.py (dz符号ベースの機械生成、統計未実証の暫定シナリオ)
+scenarios:
+  bull:
+    conditions:
+    - id: nvidia_revenue_dz_bull
+      desc: nvidia_revenue の勢い(21日変化率Zスコア)が>0.0
+      indicator: nvidia_revenue
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: hyperscaler_capex_dz_bull
+      desc: hyperscaler_capex の勢い(21日変化率Zスコア)が>0.0
+      indicator: hyperscaler_capex
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: optical_module_demand_dz_bull
+      desc: optical_module_demand の勢い(21日変化率Zスコア)が>0.0
+      indicator: optical_module_demand
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 0.5
+  neutral:
+    conditions:
+    - id: nvidia_revenue_dz_neutral
+      desc: nvidia_revenue の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: nvidia_revenue
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: hyperscaler_capex_dz_neutral
+      desc: hyperscaler_capex の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: hyperscaler_capex
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: optical_module_demand_dz_neutral
+      desc: optical_module_demand の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: optical_module_demand
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 0.5
+  bear:
+    conditions:
+    - id: nvidia_revenue_dz_bear
+      desc: nvidia_revenue の勢い(21日変化率Zスコア)が<0.0
+      indicator: nvidia_revenue
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: hyperscaler_capex_dz_bear
+      desc: hyperscaler_capex の勢い(21日変化率Zスコア)が<0.0
+      indicator: hyperscaler_capex
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: optical_module_demand_dz_bear
+      desc: optical_module_demand の勢い(21日変化率Zスコア)が<0.0
+      indicator: optical_module_demand
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 0.5

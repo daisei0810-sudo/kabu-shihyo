@@ -42,6 +42,13 @@ data/materials.db
 data/materials.db-journal
 data/materials.db-wal
 
+# 投資判断(Layer2 DecisionRecord)・配分等、保有情報を含む出力は非公開に分離する
+# (docs/investment_os_design.md §8確定事項)。リポジトリはpublicかつdaily.ymlが
+# data/・outputs/を毎日pushするため、この配下だけは意図的にgit管理しない。
+# 日次自動実行(--step all)にはまだ組み込んでいない(Step5と同じ理由: 手動実行で
+# 実データに対する動作を確認してから、永続化方式(専用private repo等)を決める)。
+private/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

@@ -7,7 +7,9 @@
   python -m src.main --step 5     # Step5: 材料取込(SEC EDGAR+EDINET+RSS+手動入力。allには未含有)
   python -m src.main --step 6     # Step6: 通知パイプライン(§13/§17/§18)
   python -m src.main --step 7     # Step7: 予測台帳(Investment OS Layer5、最重要レイヤー)
-  python -m src.main --step all   # 全ステップ(1→2→3→7→6→4、5材料取込は含まない)
+  python -m src.main --step 8     # Step8: テーマスコアリング(Investment OS Layer4、6軸)
+  python -m src.main --step 9     # Step9: 意思決定エンジン(Investment OS Layer2。allには未含有)
+  python -m src.main --step all   # 全ステップ(1→2→3→8→7→6→4、5材料取込/9判断は含まない)
 
 環境変数:
   FRED_API_KEY          : FRED APIキー (未設定時はFREDスキップ)
@@ -132,6 +134,56 @@ def run_step7() -> None:
     logger.info("=" * 60)
 
 
+def run_step8() -> None:
+    """Step8: テーマスコアリング(Investment OS Layer4、6軸ルーブリック)。Step3完了後に実行する。
+
+    構造変化30/需給25/業績20/バリュエーション10/資金流入10/政策追い風5でテーマを採点し
+    outputs/theme_scores.csv へ出力する。保有情報を含まない集計値のみのため公開で問題ない
+    (`--step all` に含む)。
+    """
+    logger.info("=" * 60)
+    logger.info("Step8: テーマスコアリング開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.scoring.theme_score import compute_all_theme_scores, save_theme_scores_csv
+    try:
+        results = compute_all_theme_scores()
+        save_theme_scores_csv(results)
+        for r in results:
+            logger.info(
+                "  [%s] total=%s conf=%.0f%%",
+                r.theme, f"{r.total:.0f}" if r.total is not None else "--",
+                r.confidence_pct * 100,
+            )
+    except Exception as exc:
+        logger.warning("テーマスコアリング失敗(後続ステップは継続実行): %s", exc)
+    logger.info("=" * 60)
+
+
+def run_step9() -> None:
+    """Step9: 意思決定エンジン(Investment OS Layer2)。Step3(・Step8)完了後に実行する。
+
+    シナリオ(bull/neutral/bear)を評価しDecisionRecordを生成、L5予測台帳へpush型で
+    記帳し、非公開の投資判断レポート(private/decision_report.md)を出力する。
+    DecisionRecordは保有銘柄の売買判断そのものであり、docs/investment_os_design.md
+    §8確定事項により公開してはいけない。永続化方式(専用private repo等)が未確定のため
+    `--step all` にはまだ含めない(Step5と同じ判断)。
+    """
+    logger.info("=" * 60)
+    logger.info("Step9: 意思決定エンジン開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.decision.pipeline import run_decisions
+    from src.reporting.decision_report import generate_decision_report
+    try:
+        records = run_decisions()
+        generate_decision_report()
+        logger.info("private/decision_report.md 生成完了(%d件の判断、非公開)", len(records))
+    except Exception as exc:
+        logger.warning("意思決定エンジン失敗: %s", exc)
+    logger.info("=" * 60)
+
+
 def run_step5() -> None:
     """Step5: 材料取込(SEC EDGAR + EDINET + RSS + 手動入力)。Phase6 基盤。
 
@@ -224,11 +276,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="先行指標監視システム")
     parser.add_argument(
         "--step",
-        choices=["1", "2", "3", "4", "5", "6", "7", "all"],
+        choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "all"],
         default="1",
-        help="実行するステップ (default: 1)。5(材料取込)は明示指定時のみ実行、"
-             "all には未含有(Phase6動作確認中のため)。6(通知)・7(予測台帳)はallに含む。"
-             "all の実行順は 1→2→3→7→6→4",
+        help="実行するステップ (default: 1)。5(材料取込)・9(意思決定エンジン)は"
+             "明示指定時のみ実行、allには未含有(5はPhase6動作確認中、9は非公開出力の"
+             "永続化方式が未確定のため)。6(通知)・7(予測台帳)・8(テーマスコア)はallに含む。"
+             "all の実行順は 1→2→3→8→7→6→4",
     )
     args = parser.parse_args()
 
@@ -247,8 +300,14 @@ def main() -> None:
     if args.step == "5":
         run_step5()
 
+    if args.step in ("8", "all"):
+        run_step8()
+
     if args.step in ("7", "all"):
         run_step7()
+
+    if args.step == "9":
+        run_step9()
 
     if args.step in ("6", "all"):
         run_step6()

@@ -8,8 +8,13 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from src.decision.models import DecisionRecord
 from src.prediction.evaluator import evaluate_due, summarize
-from src.prediction.ledger import build_pending_evaluations, build_predictions
+from src.prediction.ledger import (
+    build_pending_evaluations,
+    build_predictions,
+    build_predictions_from_decisions,
+)
 from src.prediction.models import Evaluation, Prediction
 from src.prediction.store import (
     load_evaluations,
@@ -19,7 +24,7 @@ from src.prediction.store import (
     upsert_evaluations,
     upsert_predictions,
 )
-from src.prediction.taxonomy import ACTION_DIRECTION, PREDICTION_HORIZONS
+from src.prediction.taxonomy import ACTION_DIRECTION, L2_ACTION_DIRECTION, PREDICTION_HORIZONS
 
 
 def _write_price(processed_dir: Path, key: str, dates: pd.DatetimeIndex, closes: list) -> None:
@@ -177,6 +182,55 @@ class TestLedger:
         evals = build_pending_evaluations(preds, existing_ids)
         assert len(evals) == 2
         assert "3m" not in {e.horizon for e in evals}
+
+
+# ---------------------------------------------------------------------------
+# ledger (Layer2 push型)
+# ---------------------------------------------------------------------------
+
+
+class TestLedgerFromDecisions:
+    def test_l2_action_direction_covers_five_categories(self) -> None:
+        for action in ("新規買い", "追加買い", "保有継続", "一部利確", "売却"):
+            assert action in L2_ACTION_DIRECTION
+        assert L2_ACTION_DIRECTION["追加買い"] == 1
+        assert L2_ACTION_DIRECTION["売却"] == -1
+        assert L2_ACTION_DIRECTION["保有継続"] == 0
+
+    def test_build_predictions_from_decisions_sets_source_layer(self, tmp_path: Path) -> None:
+        dates = pd.date_range("2026-06-01", periods=40, freq="D")
+        _write_price(tmp_path, "fujikura", dates, [100.0] * 40)
+        rec = DecisionRecord(
+            decision_id="dec_2026-07-10_fujikura", as_of="2026-07-10", target="fujikura",
+            theme="ai_datacenter", action="追加買い", active_scenario="bull",
+            theme_score=88.0, confidence=0.8, evidence_indicators=["hyperscaler_capex"],
+        )
+        preds = build_predictions_from_decisions([rec], date(2026, 7, 10), tmp_path)
+        assert len(preds) == 1
+        p = preds[0]
+        assert p.source_layer == "decision"
+        assert p.judgment == "追加買い"
+        assert p.expected_direction == 1
+        assert p.score_at_prediction == pytest.approx(88.0)
+        assert "hyperscaler_capex" in p.evidence_json
+        assert p.baseline_price == pytest.approx(100.0)
+
+    def test_decision_prediction_upserts_same_id_as_snapshot(self, tmp_path: Path) -> None:
+        dates = pd.date_range("2026-06-01", periods=40, freq="D")
+        _write_price(tmp_path, "fujikura", dates, [100.0] * 40)
+        snapshot_df = pd.DataFrame([
+            {"target": "fujikura", "action": "保有継続", "extended_score": 95.0,
+             "confidence_pct": 1.0},
+        ])
+        snapshot_preds = build_predictions(snapshot_df, date(2026, 7, 10), tmp_path)
+        rec = DecisionRecord(
+            decision_id="dec_2026-07-10_fujikura", as_of="2026-07-10", target="fujikura",
+            theme="ai_datacenter", action="追加買い", active_scenario="bull",
+        )
+        decision_preds = build_predictions_from_decisions([rec], date(2026, 7, 10), tmp_path)
+        assert snapshot_preds[0].prediction_id == decision_preds[0].prediction_id
+        assert snapshot_preds[0].source_layer == "portfolio_snapshot"
+        assert decision_preds[0].source_layer == "decision"
 
 
 # ---------------------------------------------------------------------------

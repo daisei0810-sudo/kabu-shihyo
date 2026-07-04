@@ -431,3 +431,24 @@ philosophy_tags("bottleneck;platform"等), benchmark_key, note
 | 7. バイオテーマ | `themes.csv` に `status=watch` で枠のみ作成、指標実装はP4以降 |
 | 8. Quantinuum 代理評価 | HON proxy + `benchmark_is_approximate=True`。IPO観測時に proxy→verified へ昇格する運用（マスタCSV更新のみで対応可能な設計とする） |
 | 10. step5 日次自動化 | P3 で daily.yml に組み込む |
+
+---
+
+## 9. P2実装状況(2026-07-04)
+
+P2スコープ(L4 6軸ルーブリック・L2シナリオ判定エンジン・L10レポート再構成)を実装済み。
+
+| 項目 | 状態 | 備考 |
+|---|---|---|
+| L4 `src/scoring/theme_score.py` | ✅完了 | `outputs/theme_scores.csv`。バリュエーション軸はPER/PSR時系列未整備のため常時unavailable(P3以降)。政策追い風軸はmaterialsのrelated_tickers紐付けが未整備のため現状ほぼunavailable |
+| L2 `src/decision/` | ✅完了(`--step 9`、`all`には未含有) | `config/scenarios/*.yaml`は現状全指標がC/Dランク(統計未実証)のため、`config/scenarios/generate.py`がdz(勢いZスコア)符号ベースで機械生成した暫定シナリオ。売買アクション自体は既存`_map_decision()`のスコアベース判定をそのまま使い、L2語彙への変換+シナリオ開示を追加しただけ(判断ロジック不変) |
+| L2→L5 push型記帳 | ✅完了 | `prediction/ledger.record_from_decisions()`。prediction_id採番方式を共通化し、同日にdecisionが実行されればsnapshot版をupsertで自然に上書き |
+| L10 非公開レポート | ✅完了(`private/decision_report.md`) | §8確定事項により公開`daily_report.md`とは別ファイル。DecisionRecordの必須6項目・判断変更ログ・予測検証成績を含む。リスク(L6)・配分(L9)・発掘(L7-8)は未実装セクションとして明示 |
+| §8確定事項「公開範囲分離」 | ⚠️一部対応 | L2 DecisionRecordの新規出力は`private/`(gitignore対象)に分離済み。ただし**既存の`outputs/portfolio_signal_scores.csv`等(P2着手前から公開)は変更していない** — 保有銘柄ごとのoutlook/actionは引き続き公開リポジトリに残る。完全分離にはこれらの扱いを別途決める必要がある |
+| `private/`の永続化方式 | ❌未確定 | gitignore対象のため日次自動実行(CI)では前日データが引き継がれない(diffが常に「初回」扱いになる)。ローカル実行では蓄積される。解消には専用private repo等が必要 — Step9を`--step all`に含めない理由 |
+
+### P2で新規追加した仕組み
+
+- `config/structural_scores.csv`: テーマ構造変化スコアの手動評価(月次、空でコミット。rss_sources.csvと同じ「意図的に空」パターン)
+- `config/scenarios/generate.py`: indicators.csvからシナリオYAMLを再生成する一回限りでないツール(指標追加・検証ランク改善時に再実行想定)
+- Layer2の action 語彙(新規買い/追加買い/保有継続/一部利確/売却)と、既存の6分類outlook/action語彙とのマッピングは `src/decision/taxonomy.py::LEGACY_ACTION_TO_L2` に集約

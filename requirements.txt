@@ -9,6 +9,7 @@ yfinance>=0.2.40
 requests>=2.32
 pydantic>=2.7
 python-dateutil>=2.9
+pyyaml>=6.0
 # dev
 pytest>=8.2
 ruff>=0.5

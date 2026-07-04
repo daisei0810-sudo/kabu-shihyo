@@ -1,0 +1,51 @@
+theme: semicap
+_generated_by: config/scenarios/generate.py (dz符号ベースの機械生成、統計未実証の暫定シナリオ)
+scenarios:
+  bull:
+    conditions:
+    - id: sox_index_dz_bull
+      desc: sox_index の勢い(21日変化率Zスコア)が>0.0
+      indicator: sox_index
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 0.5
+    - id: tsmc_capex_dz_bull
+      desc: tsmc_capex の勢い(21日変化率Zスコア)が>0.0
+      indicator: tsmc_capex
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+  neutral:
+    conditions:
+    - id: sox_index_dz_neutral
+      desc: sox_index の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: sox_index
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 0.5
+    - id: tsmc_capex_dz_neutral
+      desc: tsmc_capex の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: tsmc_capex
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+  bear:
+    conditions:
+    - id: sox_index_dz_bear
+      desc: sox_index の勢い(21日変化率Zスコア)が<0.0
+      indicator: sox_index
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 0.5
+    - id: tsmc_capex_dz_bear
+      desc: tsmc_capex の勢い(21日変化率Zスコア)が<0.0
+      indicator: tsmc_capex
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0

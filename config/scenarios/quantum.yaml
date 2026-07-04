@@ -1,0 +1,30 @@
+theme: quantum
+_generated_by: config/scenarios/generate.py (dz符号ベースの機械生成、統計未実証の暫定シナリオ)
+scenarios:
+  bull:
+    conditions:
+    - id: quantum_peer_basket_dz_bull
+      desc: quantum_peer_basket の勢い(21日変化率Zスコア)が>0.0
+      indicator: quantum_peer_basket
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 0.5
+  neutral:
+    conditions:
+    - id: quantum_peer_basket_dz_neutral
+      desc: quantum_peer_basket の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: quantum_peer_basket
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 0.5
+  bear:
+    conditions:
+    - id: quantum_peer_basket_dz_bear
+      desc: quantum_peer_basket の勢い(21日変化率Zスコア)が<0.0
+      indicator: quantum_peer_basket
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 0.5

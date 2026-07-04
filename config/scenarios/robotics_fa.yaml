@@ -1,0 +1,93 @@
+theme: robotics_fa
+_generated_by: config/scenarios/generate.py (dz符号ベースの機械生成、統計未実証の暫定シナリオ)
+scenarios:
+  bull:
+    conditions:
+    - id: robotics_peer_basket_dz_bull
+      desc: robotics_peer_basket の勢い(21日変化率Zスコア)が>0.0
+      indicator: robotics_peer_basket
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 0.5
+    - id: usdjpy_level_dz_bull
+      desc: usdjpy_level の勢い(21日変化率Zスコア)が>0.0
+      indicator: usdjpy_level
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 0.5
+    - id: ism_mfg_pmi_dz_bull
+      desc: ism_mfg_pmi の勢い(21日変化率Zスコア)が>0.0
+      indicator: ism_mfg_pmi
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+    - id: durable_goods_orders_dz_bull
+      desc: durable_goods_orders の勢い(21日変化率Zスコア)が>0.0
+      indicator: durable_goods_orders
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
+  neutral:
+    conditions:
+    - id: robotics_peer_basket_dz_neutral
+      desc: robotics_peer_basket の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: robotics_peer_basket
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 0.5
+    - id: usdjpy_level_dz_neutral
+      desc: usdjpy_level の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: usdjpy_level
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 0.5
+    - id: ism_mfg_pmi_dz_neutral
+      desc: ism_mfg_pmi の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: ism_mfg_pmi
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+    - id: durable_goods_orders_dz_neutral
+      desc: durable_goods_orders の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: durable_goods_orders
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
+  bear:
+    conditions:
+    - id: robotics_peer_basket_dz_bear
+      desc: robotics_peer_basket の勢い(21日変化率Zスコア)が<0.0
+      indicator: robotics_peer_basket
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 0.5
+    - id: usdjpy_level_dz_bear
+      desc: usdjpy_level の勢い(21日変化率Zスコア)が<0.0
+      indicator: usdjpy_level
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 0.5
+    - id: ism_mfg_pmi_dz_bear
+      desc: ism_mfg_pmi の勢い(21日変化率Zスコア)が<0.0
+      indicator: ism_mfg_pmi
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: durable_goods_orders_dz_bear
+      desc: durable_goods_orders の勢い(21日変化率Zスコア)が<0.0
+      indicator: durable_goods_orders
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
