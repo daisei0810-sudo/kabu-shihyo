@@ -10,6 +10,6 @@ yaskawa,安川電機,robotics_fa,,99.8,1.0,0.0,中立-強気,保有継続(監視
 tesla,Tesla,ev_physical_ai,,,0.0,0.0,不明,要確認,スコア算出不可(データ不足またはStep2未実行),0
 spacex,SpaceX,ev_physical_ai,,,0.0,0.0,不明,要確認,スコア算出不可(データ不足またはStep2未実行),0
 quantinuum,Quantinuum,quantum,,,0.0,0.0,不明,要確認,スコア算出不可(データ不足またはStep2未実行),0
-xrp,XRP,crypto_xrp,57.7,99.8,0.103,0.143,中立(要確認),保有継続,ロック需要ステージ: 需給ショック | スコア高(100)だが信頼度低(10%) → 1段保守化,1
-xrp_real_demand,XRP総合実需スコア,crypto_xrp,57.7,57.7,0.55,0.5,,,,2
-xrp_lock_demand,XRPロック需要スコア(需給ショック),crypto_xrp,99.8,99.8,0.103,0.143,,,ロック需要スコアは AMM内XRP残高(主代理)・RLUSD供給残高・XRPL TVL の加重合成。Lending/RWAデータは無料取得不可のため confidence は中程度(~69%)。本格化以上の判定には「信頼度: 中／代理ベース」を必ず確認すること。,1
+xrp,XRP,crypto_xrp,58.3,100.0,0.103,0.143,中立(要確認),保有継続,ロック需要ステージ: 需給ショック | スコア高(100)だが信頼度低(10%) → 1段保守化,1
+xrp_real_demand,XRP総合実需スコア,crypto_xrp,58.3,58.3,0.55,0.5,,,,2
+xrp_lock_demand,XRPロック需要スコア(需給ショック),crypto_xrp,100.0,100.0,0.103,0.143,,,ロック需要スコアは AMM内XRP残高(主代理)・RLUSD供給残高・XRPL TVL の加重合成。Lending/RWAデータは無料取得不可のため confidence は中程度(~69%)。本格化以上の判定には「信頼度: 中／代理ベース」を必ず確認すること。,1

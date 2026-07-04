@@ -1,7 +1,7 @@
 ﻿label,component,score,weight,available,data_quality,note
 real_demand_index,ハイパースケーラーCAPEX,100.0,0.25,True,verified,YoY=+80%
 real_demand_index,NVIDIA CAPEX,100.0,0.1,True,verified,YoY=+43%
-real_demand_index,TSMC CAPEX,45.44452306791776,0.1,True,verified,YoY=-4%
+real_demand_index,TSMC CAPEX,56.97281481957759,0.1,True,verified,YoY=+6%
 real_demand_index,SOX指数モメンタム,98.08612440191388,0.15,True,proxy,パーセンタイル(n=1254)
 real_demand_index,光通信バスケット(フジクラ/住友電工/古河電工/村田),96.89034369885434,0.15,True,proxy,パーセンタイル(n=1222) (構成銘柄4/4)
 real_demand_index,半導体装置バスケット(ローツェ/アドバンテスト/TOWA/KOKUSAI/芝浦),100.0,0.1,True,proxy,パーセンタイル(n=1222) (構成銘柄5/5)
@@ -13,7 +13,7 @@ real_demand_index,データセンター電力契約/受注残,,0.05,False,unavai
 ai_bubble_score,NVIDIA株価レンジ位置,94.97607655502392,0.2,True,verified,パーセンタイル(n=1254)
 ai_bubble_score,SOX指数レンジ位置,98.08612440191388,0.15,True,verified,パーセンタイル(n=1254)
 ai_bubble_score,米10年金利水準,81.04,0.15,True,verified,パーセンタイル(n=1250)
-ai_bubble_score,VIX逆数(低VIX=楽観過剰=バブル的),72.5,0.05,True,verified,逆数化: パーセンタイル(n=1256)
+ai_bubble_score,VIX逆数(低VIX=楽観過剰=バブル的),68.9,0.05,True,verified,逆数化: パーセンタイル(n=1255)
 ai_bubble_score,NVIDIA 3ヶ月モメンタム,80.15788967423174,0.1,True,verified,65日騰落率=+18%
 ai_bubble_score,AI売上÷AI投資(逆数),,0.05,False,unavailable,実需指数と同様、粒度不一致のため見送り
 ai_bubble_score,PER/EV-EBITDA/PSR/FCF Yield,,0.1,False,unavailable,yfinance Ticker.infoが不安定 + Step3オフライン原則との整合のためPhase7では見送り(Step1側fetcher実装が前提)
