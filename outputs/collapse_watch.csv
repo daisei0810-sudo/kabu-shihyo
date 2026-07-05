@@ -1,5 +1,5 @@
 ﻿name,deteriorated,value_note,available
-長期金利上昇,False,65日変化=-0.02%pt(閾値+0.3%pt),True
+長期金利上昇,False,65日変化=+0.14%pt(閾値+0.3%pt),True
 SOX指数下落,True,25日MA乖離=-5.6%(閾値-5%),True
 NVIDIA株価下落,False,25日MA乖離=-5.5%(閾値-8%),True
 ハイパースケーラーCAPEX減速,False,QoQ=+9%(マイナスで悪化),True
