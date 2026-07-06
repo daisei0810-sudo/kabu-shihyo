@@ -1,0 +1,11 @@
+# Layer9資金配分エンジンのポリシー(docs/investment_os_design.md §4.9)。
+# 各テーマへの配分上限・下限、現金下限、相関ペナルティの閾値を定義する。
+# ここは投資方針そのもの(ルール)であり、実際の保有比率(private/holdings.csv)は
+# 含まないため公開して問題ない。
+
+min_pct: 0.0            # 1テーマへの最小配分(%)
+max_pct: 40.0            # 1テーマへの最大配分(%、集中リスク抑制)
+cash_floor_pct: 5.0      # 現金として必ず残す下限(%)
+correlation_penalty_threshold: 0.7   # このピアソン相関以上のテーマペアにペナルティ
+correlation_penalty_factor: 0.7      # ペナルティ時、相関ペアの弱い方をこの係数で減衰
+rebalance_threshold_pct: 5.0         # |diff_pct|がこれ未満ならリバランス不要と判定

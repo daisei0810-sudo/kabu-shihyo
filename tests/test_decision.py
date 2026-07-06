@@ -57,6 +57,35 @@ class TestConditions:
         assert status.met is None
         assert status.data_quality == "verified"
 
+    def test_evaluate_risk_condition_without_lookup_is_unobservable(self, tmp_path: Path) -> None:
+        cond = ConditionDef(
+            condition_id="c1", desc="test", indicator="risk:dilution",
+            feature="level", op=">=", threshold=60.0,
+        )
+        status = evaluate_condition(cond, "fujikura", date(2026, 7, 4), tmp_path)
+        assert status.met is None
+        assert status.data_quality == "unavailable"
+
+    def test_evaluate_risk_condition_met(self, tmp_path: Path) -> None:
+        cond = ConditionDef(
+            condition_id="c1", desc="test", indicator="risk:dilution",
+            feature="level", op=">=", threshold=60.0,
+        )
+        risk_scores = {("fujikura", "dilution"): 80.0}
+        status = evaluate_condition(cond, "fujikura", date(2026, 7, 4), tmp_path, risk_scores)
+        assert status.met is True
+        assert status.measured_value == pytest.approx(80.0)
+        assert status.data_quality == "estimated"
+
+    def test_evaluate_risk_condition_not_met(self, tmp_path: Path) -> None:
+        cond = ConditionDef(
+            condition_id="c1", desc="test", indicator="risk:dilution",
+            feature="level", op=">=", threshold=60.0,
+        )
+        risk_scores = {("fujikura", "dilution"): 10.0}
+        status = evaluate_condition(cond, "fujikura", date(2026, 7, 4), tmp_path, risk_scores)
+        assert status.met is False
+
 
 # ---------------------------------------------------------------------------
 # assessment
@@ -79,6 +108,18 @@ class TestAssessScenario:
         assert result.fulfillment_rate == 0.0
         assert len(result.unobservable) == 1
         assert result.unmet == []
+
+    def test_risk_scores_passed_through_to_condition(self, tmp_path: Path) -> None:
+        scenario = Scenario("bear", [
+            ConditionDef("c1", "desc", "risk:dilution", "level", ">=", 60.0, weight=1.0),
+        ])
+        risk_scores = {("fujikura", "dilution"): 90.0}
+        result = assess_scenario(
+            "ai_datacenter", scenario, "fujikura", date(2026, 7, 4), tmp_path, risk_scores,
+        )
+        assert result.fulfillment_rate == 1.0
+        assert result.unmet == []
+        assert result.unobservable == []
 
 
 # ---------------------------------------------------------------------------
@@ -164,6 +205,49 @@ class TestDecideEngine:
         assert rec.action == "追加買い"    # LEGACY_ACTION_TO_L2経由の変換
         assert rec.active_scenario == "neutral"
         assert "シナリオ未整備" in rec.reason
+
+    def test_risk_scores_csv_feeds_bear_condition(self, tmp_path: Path) -> None:
+        signals_path = tmp_path / "portfolio_signal_scores.csv"
+        pd.DataFrame([
+            {"target": "fujikura", "name_ja": "フジクラ", "layer": "ai_datacenter",
+             "extended_score": 95.0, "confidence_pct": 1.0, "outlook": "強気",
+             "action": "追加", "signal_note": "スコア高(95)"},
+        ]).to_csv(signals_path, index=False)
+
+        risk_scores_path = tmp_path / "risk_scores.csv"
+        pd.DataFrame([
+            {"theme": "ai_datacenter", "target": "fujikura", "category": "dilution",
+             "risk_score": 90.0, "deteriorated": True, "evidence": "test",
+             "data_quality": "estimated", "as_of": "2026-07-04"},
+        ]).to_csv(risk_scores_path, index=False)
+
+        scenarios_dir = tmp_path / "scenarios"
+        scenarios_dir.mkdir()
+        doc = {
+            "theme": "ai_datacenter",
+            "scenarios": {
+                "bull": {"conditions": []},
+                "neutral": {"conditions": []},
+                "bear": {"conditions": [
+                    {"id": "risk_dilution_bear", "desc": "d", "indicator": "risk:dilution",
+                     "feature": "level", "op": ">=", "threshold": 60.0, "weight": 1.0},
+                ]},
+            },
+        }
+        with (scenarios_dir / "ai_datacenter.yaml").open("w", encoding="utf-8") as f:
+            yaml.dump(doc, f, allow_unicode=True)
+
+        records = decide(
+            as_of=date(2026, 7, 4),
+            signals_path=signals_path,
+            theme_scores_path=tmp_path / "nonexistent.csv",
+            scenarios_dir=scenarios_dir,
+            processed_dir=tmp_path,
+            risk_scores_path=risk_scores_path,
+        )
+        assert len(records) == 1
+        assert records[0].active_scenario == "bear"
+        assert "risk:dilution" in records[0].evidence_indicators
 
     def test_excludes_aggregate_rows_and_empty_action(self, tmp_path: Path) -> None:
         signals_path = tmp_path / "portfolio_signal_scores.csv"

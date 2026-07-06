@@ -87,6 +87,7 @@ class ScoreEngine:
         self,
         scorecard_path: str | None = None,
         processed_dir: str = DATA_PROCESSED,
+        weights_path: str | None = None,
     ) -> None:
         self.processed_dir = Path(processed_dir)
         sc_path = (
@@ -94,6 +95,12 @@ class ScoreEngine:
             else OUTPUT_DIR / "indicator_scorecard.csv"
         )
         self.scorecard: pd.DataFrame = self._load_scorecard(sc_path)
+        # Layer5(prediction/weight_updater.py)が学習した指標重みの上書き。
+        # weights_path未指定(既定)の場合は読み込まない(挙動不変。既存の
+        # config.py docstring「validationの結果で後段が上書きできる」の実装箇所)。
+        self.learned_multipliers: dict[str, float] = (
+            self._load_learned_multipliers(Path(weights_path)) if weights_path else {}
+        )
 
     def compute(self, target: str) -> AssetScore:
         """指定資産の Hard/Extended スコアを計算。"""
@@ -144,7 +151,8 @@ class ScoreEngine:
             )
 
             raw_val, score_0_100 = self._get_current_score(ind_key, target)
-            eff_weight = rank_weight * quality_weight
+            learned_multiplier = self.learned_multipliers.get(ind_key, 1.0)
+            eff_weight = rank_weight * quality_weight * learned_multiplier
 
             contributions.append(IndicatorContribution(
                 key=ind_key,
@@ -253,6 +261,25 @@ class ScoreEngine:
         except Exception as exc:
             logger.warning("scorecard load failed: %s", exc)
             return pd.DataFrame()
+
+    @staticmethod
+    def _load_learned_multipliers(path: Path) -> dict[str, float]:
+        """prediction/weight_updater.pyが出力するindicator_weights.csvを読み込む。
+
+        ファイルが無い/読み込み失敗時は空辞書(全指標multiplier=1.0=既存挙動不変)。
+        """
+        if not path.exists():
+            return {}
+        try:
+            df = pd.read_csv(path)
+            return {
+                str(row["indicator_key"]): float(row["learned_multiplier"])
+                for _, row in df.iterrows()
+                if pd.notna(row.get("learned_multiplier"))
+            }
+        except Exception as exc:
+            logger.warning("indicator_weights.csv load failed: %s", exc)
+            return {}
 
     @staticmethod
     def _build_note(contributions: list[IndicatorContribution]) -> str:

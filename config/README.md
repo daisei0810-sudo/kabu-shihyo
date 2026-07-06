@@ -19,6 +19,39 @@
   benchmark_key,note`。`status=watch` は優先度低で監視のみ(例: バイオ)。
   `benchmark_key` はLayer5(予測検証)が超過リターンを計算する際のベンチマーク指数。
 
+## structural_scores.csv (Investment OS Layer4構造変化スコアの手動評価)
+
+テーマの構造変化スコア(0-30点、6軸ルーブリックの最大配点軸)の手動評価。
+列は `theme,score,updated_at,note`。materials由来の自動加減点だけでは
+「巨大サイクルの構造変化」という定性的判断を捕捉しきれないため、月次で
+ユーザーが更新するハイブリッド運用(§8確定事項)。rss_sources.csvと同様、
+**意図的に空の状態でコミット**されている(未評価テーマはunavailableとして
+正直に表示され、捏造しない)。
+
+## scenarios/*.yaml (Investment OS Layer2シナリオ定義)
+
+テーマごとの強気/中立/弱気シナリオの成立条件(`config/scenarios/<theme>.yaml`)。
+`config/scenarios/generate.py` が `indicators.csv` から機械的に生成する
+(現状は全指標が統計的に未実証・C/Dランクのため、dz(勢いZスコア)の符号のみを
+条件にした暫定版。指標の検証ランクがA/Bへ改善したら人手で閾値を調整する想定)。
+Layer6(risk_scores)の判定も `risk:<category>` 形式でbearシナリオに含まれる。
+
+再生成方法:
+```
+python "C:\Users\daisei\株指標ツール\config\scenarios\generate.py"
+```
+
+## allocation_policy.yaml (Investment OS Layer9配分ポリシー)
+
+資金配分エンジンのルール(1テーマの上限/下限%・現金下限%・相関ペナルティ閾値)。
+投資方針そのもの(ルール)であり実際の保有比率は含まないため公開している。
+
+## holdings.example.csv (Investment OS Layer9現在配分テンプレート)
+
+`private/holdings.csv`(gitignore対象、非公開)のスキーマ例。列は `theme,
+current_pct` のみ(§8確定事項により金額・株数は持たない)。実際の保有比率は
+このファイルをコピーして `private/holdings.csv` に手動入力する。
+
 ## rss_sources.csv
 
 企業IR・政府機関のRSS/AtomフィードURLを登録する設定ファイル。**意図的に空の状態で

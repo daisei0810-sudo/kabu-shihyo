@@ -30,6 +30,7 @@ OUTPUT_DIR = Path(OUTPUTS)
 PRIVATE_DIR = Path(PRIVATE_OUTPUTS)
 SIGNALS_CSV = PRIVATE_DIR / "portfolio_signal_scores.csv"
 THEME_SCORES_CSV = OUTPUT_DIR / "theme_scores.csv"
+RISK_SCORES_CSV = PRIVATE_DIR / "risk_scores.csv"
 
 _INSTRUMENT_KEYS: frozenset[str] = frozenset(i.key for i in INSTRUMENTS)
 _LAYER_BY_KEY: dict[str, str] = {i.key: i.layer.value for i in INSTRUMENTS}
@@ -43,6 +44,20 @@ def _load_csv(path: Path) -> pd.DataFrame:
     except Exception as exc:
         logger.warning("%s load failed: %s", path, exc)
         return pd.DataFrame()
+
+
+def _load_risk_scores(path: Path) -> dict[tuple[str, str], float]:
+    """Layer6の(target, category) -> risk_score ルックアップを構築する。"""
+    df = _load_csv(path)
+    if df.empty:
+        return {}
+    lookup: dict[tuple[str, str], float] = {}
+    for _, row in df.iterrows():
+        score = row.get("risk_score")
+        if pd.isna(score):
+            continue
+        lookup[(str(row.get("target", "")), str(row.get("category", "")))] = float(score)
+    return lookup
 
 
 def _pick_active_scenario(
@@ -75,11 +90,13 @@ def decide(
     theme_scores_path: Path = THEME_SCORES_CSV,
     scenarios_dir: Path = SCENARIOS_DIR,
     processed_dir: Path = PROCESSED_DIR,
+    risk_scores_path: Path = RISK_SCORES_CSV,
 ) -> list[DecisionRecord]:
     """当日のDecisionRecordを保有銘柄ごとに生成する。"""
     d = as_of or date.today()
     signals_df = _load_csv(signals_path)
     theme_scores_df = _load_csv(theme_scores_path)
+    risk_scores = _load_risk_scores(risk_scores_path)
     records: list[DecisionRecord] = []
 
     if signals_df.empty:
@@ -105,9 +122,11 @@ def decide(
             active = "neutral"
             reason_suffix = "シナリオ未整備(config/scenarios/未作成のテーマ)"
         else:
-            bull = assess_scenario(theme, scenarios.bull, target, d, processed_dir)
-            neutral = assess_scenario(theme, scenarios.neutral, target, d, processed_dir)
-            bear = assess_scenario(theme, scenarios.bear, target, d, processed_dir)
+            bull = assess_scenario(theme, scenarios.bull, target, d, processed_dir, risk_scores)
+            neutral = assess_scenario(
+                theme, scenarios.neutral, target, d, processed_dir, risk_scores,
+            )
+            bear = assess_scenario(theme, scenarios.bear, target, d, processed_dir, risk_scores)
             active = _pick_active_scenario(bull, neutral, bear)
             reason_suffix = None
 

@@ -91,3 +91,31 @@ scenarios:
       op: <
       threshold: 0.0
       weight: 1.0
+    - id: risk_regulation_bear
+      desc: Layer6リスクカテゴリ「regulation」のスコアが60以上(悪化)
+      indicator: risk:regulation
+      feature: level
+      op: '>='
+      threshold: 60.0
+      weight: 0.3
+    - id: risk_dilution_bear
+      desc: Layer6リスクカテゴリ「dilution」のスコアが60以上(悪化)
+      indicator: risk:dilution
+      feature: level
+      op: '>='
+      threshold: 60.0
+      weight: 0.3
+    - id: risk_customer_churn_bear
+      desc: Layer6リスクカテゴリ「customer_churn」のスコアが60以上(悪化)
+      indicator: risk:customer_churn
+      feature: level
+      op: '>='
+      threshold: 60.0
+      weight: 0.3
+    - id: risk_competition_loss_bear
+      desc: Layer6リスクカテゴリ「competition_loss」のスコアが60以上(悪化)
+      indicator: risk:competition_loss
+      feature: level
+      op: '>='
+      threshold: 60.0
+      weight: 0.5

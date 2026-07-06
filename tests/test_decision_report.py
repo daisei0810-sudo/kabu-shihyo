@@ -9,11 +9,14 @@ from src.reporting.decision_report import (
     _detect_signal_divergence,
     _fmt_axis,
     _fmt_pct,
+    _section_allocation,
     _section_change_log,
     _section_conclusion,
     _section_decisions,
+    _section_discovery,
     _section_portfolio_signals,
     _section_prediction_accuracy,
+    _section_risk,
     _section_theme_scores,
 )
 
@@ -209,3 +212,62 @@ class TestSectionPortfolioSignalsDivergenceIntegration:
     def test_empty_df_shows_placeholder(self) -> None:
         lines = _section_portfolio_signals(pd.DataFrame())
         assert any("なし" in line for line in lines)
+
+
+# ---------------------------------------------------------------------------
+# risk (Layer6)
+# ---------------------------------------------------------------------------
+
+
+class TestSectionRisk:
+    def test_empty_df_shows_placeholder(self) -> None:
+        lines = _section_risk(pd.DataFrame())
+        assert any("なし" in line for line in lines)
+
+    def test_no_deterioration_shows_placeholder(self) -> None:
+        df = pd.DataFrame([{
+            "theme": "ai_datacenter", "target": "fujikura", "category": "capex_cut",
+            "risk_score": 0.0, "deteriorated": False, "evidence": "e",
+            "data_quality": "verified", "as_of": "2026-07-06",
+        }])
+        lines = _section_risk(df)
+        assert any("悪化しているカテゴリはありません" in line for line in lines)
+
+    def test_deteriorated_row_rendered(self) -> None:
+        df = pd.DataFrame([{
+            "theme": "robotics_fa", "target": "fanuc", "category": "competition_loss",
+            "risk_score": 75.0, "deteriorated": True, "evidence": "対ピア劣後",
+            "data_quality": "proxy", "as_of": "2026-07-06",
+        }])
+        lines = _section_risk(df)
+        joined = "\n".join(lines)
+        assert "fanuc" in joined
+        assert "競合劣後" in joined
+
+
+# ---------------------------------------------------------------------------
+# allocation (Layer9) / discovery (Layer7-8)
+# ---------------------------------------------------------------------------
+
+
+class TestSectionAllocation:
+    def test_empty_df_shows_placeholder(self) -> None:
+        lines = _section_allocation(pd.DataFrame())
+        assert any("なし" in line for line in lines)
+
+    def test_renders_row_with_missing_current_pct(self) -> None:
+        df = pd.DataFrame([{
+            "theme": "ai_datacenter", "theme_score": 90.0, "risk_haircut": 0.0,
+            "recommended_pct": 25.0, "current_pct": None, "diff_pct": None,
+            "rationale": "テーマスコア90", "confidence": 0.8, "as_of": "2026-07-06",
+        }])
+        lines = _section_allocation(df)
+        joined = "\n".join(lines)
+        assert "ai_datacenter" in joined
+        assert "未入力" in joined
+
+
+class TestSectionDiscovery:
+    def test_shows_not_implemented(self) -> None:
+        lines = _section_discovery()
+        assert any("未実装" in line for line in lines)

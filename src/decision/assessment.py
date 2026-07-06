@@ -15,15 +15,17 @@ def assess_scenario(
     target_key: str,
     as_of: date,
     processed_dir: Path = PROCESSED_DIR,
+    risk_scores: dict[tuple[str, str], float] | None = None,
 ) -> ScenarioAssessment:
     """1シナリオ(bull/neutral/bear)を実データで評価する。
 
     fulfillment_rate = Σ(成立条件のweight) / Σ(観測可能な条件のweight)。
     条件が1つも無い、または全条件が観測不能の場合は0.0(成立していないとみなす、
-    捏造しない)。
+    捏造しない)。risk_scoresはLayer6の(target, category)->risk_scoreルックアップ
+    (risk:<category>形式の条件でのみ使用)。
     """
     statuses = [
-        evaluate_condition(cond, target_key, as_of, processed_dir)
+        evaluate_condition(cond, target_key, as_of, processed_dir, risk_scores)
         for cond in scenario.conditions
     ]
     weight_by_id = {c.condition_id: c.weight for c in scenario.conditions}

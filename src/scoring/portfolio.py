@@ -141,7 +141,11 @@ class PortfolioScorer:
     """保有銘柄ポートフォリオ全体のスコアと投資判断を集計。"""
 
     def __init__(self, scorecard_path: str | None = None) -> None:
-        self.engine = ScoreEngine(scorecard_path=scorecard_path)
+        # Layer5(prediction/weight_updater.py)が学習したindicator_weights.csvが
+        # あれば読み込み、指標重みを上書きする(config.py docstring「validationの
+        # 結果で後段が上書きできる」の実装箇所)。ファイル未生成時は既存挙動と不変。
+        weights_path = str(OUTPUT_DIR / "indicator_weights.csv")
+        self.engine = ScoreEngine(scorecard_path=scorecard_path, weights_path=weights_path)
 
     def run(self) -> PortfolioResult:
         """全保有銘柄のスコアを計算してポートフォリオ結果を返す。"""

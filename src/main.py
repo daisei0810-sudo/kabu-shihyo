@@ -6,10 +6,12 @@
   python -m src.main --step 3     # Step3: スコアリングのみ
   python -m src.main --step 5     # Step5: 材料取込(SEC EDGAR+EDINET+RSS+手動入力。allには未含有)
   python -m src.main --step 6     # Step6: 通知パイプライン(§13/§17/§18)
-  python -m src.main --step 7     # Step7: 予測台帳(Investment OS Layer5、最重要レイヤー)
+  python -m src.main --step 7     # Step7: 予測台帳+指標重み自動更新(Investment OS Layer5)
   python -m src.main --step 8     # Step8: テーマスコアリング(Investment OS Layer4、6軸)
   python -m src.main --step 9     # Step9: 意思決定エンジン(Investment OS Layer2。allには未含有)
-  python -m src.main --step all   # 全ステップ(1→2→3→8→7→6→4、5材料取込/9判断は含まない)
+  python -m src.main --step 10    # Step10: リスクエンジン(Investment OS Layer6)
+  python -m src.main --step 11    # Step11: 資金配分エンジン(Investment OS Layer9。allには未含有)
+  python -m src.main --step all   # 全ステップ(1→2→3→8→10→7→6→4、5材料取込/9判断/11配分は含まない)
 
 環境変数:
   FRED_API_KEY          : FRED APIキー (未設定時はFREDスキップ)
@@ -131,6 +133,14 @@ def run_step7() -> None:
         run_predictions()
     except Exception as exc:
         logger.warning("予測台帳パイプライン失敗(後続ステップは継続実行): %s", exc)
+
+    # 指標重み自動更新(§4.6(c))。評価済みサンプルが貯まるまではmultiplier=1.0の
+    # まま(n<10は更新しない実効サンプルガード)。同じLayer5の一部としてここで実行する。
+    from src.prediction.weight_updater import run_weight_update
+    try:
+        run_weight_update()
+    except Exception as exc:
+        logger.warning("指標重み自動更新失敗(後続ステップは継続実行): %s", exc)
     logger.info("=" * 60)
 
 
@@ -160,14 +170,58 @@ def run_step8() -> None:
     logger.info("=" * 60)
 
 
+def run_step10() -> None:
+    """Step10: リスクエンジン(Investment OS Layer6)。Step3完了後に実行する。
+
+    保有銘柄×6リスクカテゴリ(regulation/tech_defeat/dilution/competition_loss/
+    capex_cut/customer_churn)を評価する。個別銘柄ごとの悪化理由(どの懸念材料で
+    警戒しているか)は private/risk_scores.csv(非公開)、テーマ集約のrisk_level
+    (0-3、具体的理由は含まない)は outputs/risk_level_by_theme.csv(公開)へ出力する
+    (docs/investment_os_design.md §8確定事項。collapse_watch.csvと同じ扱い)。
+    `--step all` に含む(private/への書き込みは既存のportfolio_signal_scores.csv等と
+    同様、private companion repoが未設定でもクラッシュしない揮発動作)。
+    """
+    logger.info("=" * 60)
+    logger.info("Step10: リスクエンジン開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.risk.pipeline import run_risk_engine
+    try:
+        run_risk_engine()
+    except Exception as exc:
+        logger.warning("リスクエンジン失敗(後続ステップは継続実行): %s", exc)
+    logger.info("=" * 60)
+
+
+def run_step11() -> None:
+    """Step11: 資金配分エンジン(Investment OS Layer9)。Step8・Step10完了後に実行する。
+
+    テーマスコア×リスクヘアカット×相関ペナルティでルールベース配分を算出する。
+    推奨配分・現在配分(private/holdings.csvから)・差分はいずれも保有資産構成を
+    示すため private/allocation.csv(非公開)へ出力する。Step9と同じ理由により
+    `--step all` にはまだ含めない。
+    """
+    logger.info("=" * 60)
+    logger.info("Step11: 資金配分エンジン開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.allocation.pipeline import run_allocation
+    try:
+        run_allocation()
+    except Exception as exc:
+        logger.warning("資金配分エンジン失敗: %s", exc)
+    logger.info("=" * 60)
+
+
 def run_step9() -> None:
     """Step9: 意思決定エンジン(Investment OS Layer2)。Step3(・Step8)完了後に実行する。
 
     シナリオ(bull/neutral/bear)を評価しDecisionRecordを生成、L5予測台帳へpush型で
     記帳し、非公開の投資判断レポート(private/decision_report.md)を出力する。
     DecisionRecordは保有銘柄の売買判断そのものであり、docs/investment_os_design.md
-    §8確定事項により公開してはいけない。永続化方式(専用private repo等)が未確定のため
-    `--step all` にはまだ含めない(Step5と同じ判断)。
+    §8確定事項により公開してはいけない。private companion repo(③A)による永続化は
+    実装済みだが、`--step all` には含めない(明示的な実行のみとし、日次自動実行は
+    daily.yml側でPRIVATE_REPO_PAT設定済みの場合のみ`--step 9`を個別に呼ぶ)。
     """
     logger.info("=" * 60)
     logger.info("Step9: 意思決定エンジン開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
@@ -276,12 +330,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="先行指標監視システム")
     parser.add_argument(
         "--step",
-        choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "all"],
+        choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "all"],
         default="1",
-        help="実行するステップ (default: 1)。5(材料取込)・9(意思決定エンジン)は"
-             "明示指定時のみ実行、allには未含有(5はPhase6動作確認中、9は非公開出力の"
-             "永続化方式が未確定のため)。6(通知)・7(予測台帳)・8(テーマスコア)はallに含む。"
-             "all の実行順は 1→2→3→8→7→6→4",
+        help="実行するステップ (default: 1)。5(材料取込)・9(意思決定エンジン)・"
+             "11(資金配分)は明示指定時のみ実行、allには未含有(5はPhase6動作確認中、"
+             "9・11は非公開出力のため日次自動実行はdaily.yml側でPRIVATE_REPO_PAT設定時"
+             "のみ個別に呼ぶ)。6(通知)・7(予測台帳)・8(テーマスコア)・10(リスク)はallに含む。"
+             "all の実行順は 1→2→3→8→10→7→6→4",
     )
     args = parser.parse_args()
 
@@ -303,11 +358,17 @@ def main() -> None:
     if args.step in ("8", "all"):
         run_step8()
 
+    if args.step in ("10", "all"):
+        run_step10()
+
     if args.step in ("7", "all"):
         run_step7()
 
     if args.step == "9":
         run_step9()
+
+    if args.step == "11":
+        run_step11()
 
     if args.step in ("6", "all"):
         run_step6()

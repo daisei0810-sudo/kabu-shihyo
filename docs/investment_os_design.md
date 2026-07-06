@@ -454,3 +454,28 @@ P2スコープ(L4 6軸ルーブリック・L2シナリオ判定エンジン・L1
 - Layer2の action 語彙(新規買い/追加買い/保有継続/一部利確/売却)と、既存の6分類outlook/action語彙とのマッピングは `src/decision/taxonomy.py::LEGACY_ACTION_TO_L2` に集約
 - `PRIVATE_OUTPUTS`定数(`src/config.py`)を追加し、`private/`配下への出力先を一元管理
 - 予測台帳(Layer5)は当初publicの`data/predictions/`だったが、①Bとの整合のため`private/predictions/`へ全面移設(公開のsnapshot専用trackは①Bの前提と矛盾するため採用せず)
+
+---
+
+## 10. P3実装状況(2026-07-06)
+
+P3スコープ(L6リスクエンジン・L9資金配分・L5指標重み自動更新)を実装済み。
+
+| 項目 | 状態 | 備考 |
+|---|---|---|
+| L6 `src/risk/` | ✅完了(`--step 10`、`all`に含む) | `collapse_watch.py`のLEVEL_THRESHOLDS(2/3/4項目)をそのまま再利用し6カテゴリへ一般化。真に計算可能なのはcapex_cut(ai_datacenterのみ)とcompetition_loss(ピアバスケットが定義済みのai_datacenter/robotics_fa/quantumのみ)。tech_defeatはcompetition_lossと本質的に同じ計算になるため恒常的unavailableの正直なプレースホルダー。regulation/dilution/customer_churnはmaterials依存(theme_score.pyのpolicy_tailwind軸と同じくrelated_tickers紐付け未整備で現状ほぼunavailable)。個別銘柄詳細は`private/risk_scores.csv`、テーマ集約risk_level(0-3)のみ`outputs/risk_level_by_theme.csv`で公開 |
+| L2への統合 | ✅完了 | `decision/conditions.py`が`indicator`が`risk:<category>`形式の条件を認識しrisk_scoresルックアップを参照。`config/scenarios/generate.py`がテーマごとに構造的に計算可能なカテゴリのみbear条件として自動生成(capex_cut/competition_lossはテーマ限定、regulation/dilution/customer_churnは全テーマ共通) |
+| L9 `src/allocation/` | ✅完了(`--step 11`、`all`には未含有) | `raw_i = theme_score_i × (1-risk_haircut_i)`(risk_level 0-3→ヘアカット0-50%)→相関ペナルティ(相関0.7以上のペアの弱い方を減衰、複数ペア該当時は最も厳しい乗数を採用)→反復ウォーターフィルでmin/max_pctクリップ+残余再分配(1回の再分配では連鎖クリップを取りこぼすため、全テーマがmin/maxに収まるまで反復)。テーマ間相関は保有銘柄バスケットの90日リターンから算出。出力は保有資産構成を示すため全面非公開(`private/allocation.csv`)。現在配分入力は`private/holdings.csv`(テーマ・比率のみ、金額非保持、§8確定事項) |
+| L5 `weight_updater.py` | ✅完了(Step7に統合) | 設計§4.6(c)の定式化「contribution_i = weight_i × sign(zscore_i) × sign(excess_return)」は、現状のevidence_jsonが指標keyの単純なリストでzscore/weight情報を持たないため実装不可。方向的中(direction_hit)を引用指標全てに等しく帰属させる簡略版を採用(存在しないデータ精度を捏造しない)。n<10は更新しない実効サンプルガード、multiplier有界0.25-2.0、Dランクはmultiplierに関わらず0。`ScoreEngine`(`src/scoring/engine.py`)が起動時に`outputs/indicator_weights.csv`を読み込み反映(ファイル未生成時は既存挙動と完全不変)。現状は評価済み予測が0件のため全指標multiplier=1.0(no-op)、データ蓄積後に自動的に効き始める |
+| L10非公開レポート更新 | ✅完了 | `decision_report.py`のリスク(L6)・配分(L9)セクションを「未実装」から実データ表示へ差し替え。発掘(L7-8)は引き続き「未実装」(P4予定) |
+
+### P3で判明した設計上の簡略化・注意点
+
+- **weight_updaterの簡略化**: 設計書のzscore符号ベース定式化は現行のevidence_json構造では実装できず、direction_hit帰属の簡略版とした。将来evidence_jsonを構造化(indicator_key+measured_value+weightのリスト)すれば元の定式化へ移行可能
+- **tech_defeatの扱い**: 無料データではcompetition_lossと区別できる技術敗北の直接指標を作れないため、恒常的unavailableとして正直に明示する設計とした(捏造回避)
+- **`_normalize_and_clip`のウォーターフィル**: 単純な「クリップ→1回だけ再分配」では、再分配後に別テーマが新たに上限超過する連鎖ケースを取りこぼす(実装中にテストで発見・修正)。反復的に収束させる方式に変更済み
+- **allocation.csvの完全非公開化**: 当初は「recommended_pctのみなら公開可」を検討したが、design仕様がrecommended/current/diffを1行にまとめる構成のため、部分公開は複雑さに見合わないと判断し全面非公開とした(①Bで確立した方針との一貫性を優先)
+
+### P4スコープ(設計書§5より、未着手)
+
+L7 `src/discovery/companies.py`(新規投資発掘)・L8 `src/discovery/themes.py`(新テーマ発掘)。定量データが薄い領域のためestimated/manual中心になる見込み。

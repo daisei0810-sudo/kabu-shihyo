@@ -55,12 +55,18 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
 
-      # Step9(意思決定エンジン)はprivateリポジトリでの永続化が確認できた場合のみ
-      # 自動実行する。永続化が無い状態で毎日実行しても「前回比較」が機能せず
-      # 無意味なため。
+      # Step9(意思決定エンジン)・Step11(資金配分)はprivateリポジトリでの永続化が
+      # 確認できた場合のみ自動実行する。永続化が無い状態で毎日実行しても
+      # 「前回比較」が機能せず無意味なため。Step11はStep8(テーマスコア)・
+      # Step10(リスク、いずれも--step all内で実行済み)の出力を読むため、
+      # このタイミング(--step all完了後)で問題ない。
       - name: Run Step9 (decision engine)
         if: ${{ env.HAS_PRIVATE_REPO == 'true' }}
         run: python -m src.main --step 9
+
+      - name: Run Step11 (capital allocation)
+        if: ${{ env.HAS_PRIVATE_REPO == 'true' }}
+        run: python -m src.main --step 11
 
       - name: Commit data and outputs
         run: |

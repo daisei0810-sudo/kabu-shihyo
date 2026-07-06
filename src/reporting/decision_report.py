@@ -140,15 +140,36 @@ def _section_theme_scores(theme_scores_df: pd.DataFrame) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# ④リスク(L6、未実装)
+# ④リスク(L6)
 # ---------------------------------------------------------------------------
 
-def _section_risk() -> list[str]:
-    return [
-        "## リスクエンジン(Layer6)", "",
-        "*未実装(docs/investment_os_design.md フェーズP3で対応予定)。"
-        "現状は既存の「AIサイクル崩壊先行警戒」(公開daily_report.md参照)のみ。*", "",
-    ]
+_RISK_CATEGORY_LABEL: dict[str, str] = {
+    "regulation": "規制・制裁", "tech_defeat": "技術的敗北", "dilution": "希薄化",
+    "competition_loss": "競合劣後", "capex_cut": "CAPEX減速", "customer_churn": "顧客離脱",
+}
+
+
+def _section_risk(risk_df: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## リスクエンジン(Layer6、下落検知)", ""]
+    if risk_df.empty:
+        lines += ["*private/risk_scores.csv なし(--step 10 未実行)*", ""]
+        return lines
+
+    deteriorated = risk_df[risk_df["deteriorated"] == True]  # noqa: E712
+    if deteriorated.empty:
+        lines += ["*悪化しているカテゴリはありません*", ""]
+        return lines
+
+    lines.append("| 銘柄 | テーマ | カテゴリ | リスクスコア | 根拠 |")
+    lines.append("|---|---|---|---:|---|")
+    for _, row in deteriorated.iterrows():
+        category = _RISK_CATEGORY_LABEL.get(str(row.get("category")), str(row.get("category")))
+        lines.append(
+            f"| {row.get('target')} | {row.get('theme')} | {category} "
+            f"| {_fmt_axis(row.get('risk_score'))} | {row.get('evidence')} |"
+        )
+    lines.append("")
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -465,10 +486,36 @@ def _section_prediction_accuracy(acc_df: pd.DataFrame) -> list[str]:
 # ⑧配分提案(L9、未実装) / ⑨発掘ランキング(L7-8、未実装)
 # ---------------------------------------------------------------------------
 
-def _section_allocation_and_discovery() -> list[str]:
+def _section_allocation(allocation_df: pd.DataFrame) -> list[str]:
+    lines: list[str] = ["## 配分提案(Layer9)", ""]
+    if allocation_df.empty:
+        lines += ["*private/allocation.csv なし(--step 11 未実行)*", ""]
+        return lines
+
+    lines.append("| テーマ | テーマスコア | 推奨配分 | 現在配分 | 差分 | 根拠 |")
+    lines.append("|---|---:|---:|---:|---:|---|")
+    for _, row in allocation_df.iterrows():
+        rec = row.get("recommended_pct")
+        cur = row.get("current_pct")
+        diff = row.get("diff_pct")
+        lines.append(
+            f"| {row.get('theme')} | {_fmt_axis(row.get('theme_score'))} "
+            f"| {_fmt_axis(rec)}% | {_fmt_axis(cur) + '%' if pd.notna(cur) else '未入力'} "
+            f"| {f'{float(diff):+.1f}%' if pd.notna(diff) else '--'} | {row.get('rationale')} |"
+        )
+    lines.append("")
+    lines.append(
+        "> 現在配分は private/holdings.csv (config/holdings.example.csv参照)を"
+        "手動保守した場合のみ表示される。金額・株数は保持しない(比率のみ)。"
+    )
+    lines.append("")
+    return lines
+
+
+def _section_discovery() -> list[str]:
     return [
-        "## 配分提案(Layer9) / 発掘ランキング(Layer7-8)", "",
-        "*未実装(docs/investment_os_design.md フェーズP3-P4で対応予定)。*", "",
+        "## 発掘ランキング(Layer7-8)", "",
+        "*未実装(docs/investment_os_design.md フェーズP4で対応予定)。*", "",
     ]
 
 
@@ -515,20 +562,23 @@ def generate_decision_report(as_of: date | None = None) -> str:
     signals_df = _load_csv("portfolio_signal_scores.csv", PRIVATE_DIR)
     tech_df = _load_csv("technical_scores.csv", PRIVATE_DIR)
     ds_df = _load_csv("dip_sell_scores.csv", PRIVATE_DIR)
+    risk_df = _load_csv("risk_scores.csv", PRIVATE_DIR)
+    allocation_df = _load_csv("allocation.csv", PRIVATE_DIR)
 
     lines: list[str] = []
     lines.extend(_section_header(d))
     lines.extend(_section_notifications())
     lines.extend(_section_early_signal(theme_scores_df))
     lines.extend(_section_theme_scores(theme_scores_df))
-    lines.extend(_section_risk())
+    lines.extend(_section_risk(risk_df))
     lines.extend(_section_portfolio_signals(signals_df, ds_df))
     lines.extend(_section_technicals(tech_df))
     lines.extend(_section_dip_sell(ds_df))
     lines.extend(_section_decisions(records))
     lines.extend(_section_change_log(records, prev))
     lines.extend(_section_prediction_accuracy(acc_df))
-    lines.extend(_section_allocation_and_discovery())
+    lines.extend(_section_allocation(allocation_df))
+    lines.extend(_section_discovery())
     lines.extend(_section_conclusion(records))
 
     lines += ["---", f"*生成: {datetime.now().isoformat()} | 非公開レポート、公開禁止*"]

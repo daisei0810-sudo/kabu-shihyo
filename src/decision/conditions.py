@@ -1,4 +1,8 @@
-"""シナリオ条件の評価 — 指標の特徴量を実データから読み、閾値と比較する。"""
+"""シナリオ条件の評価 — 指標の特徴量を実データから読み、閾値と比較する。
+
+`indicator`列が"risk:<category>"形式の場合はLayer6(risk_scores)のルックアップを
+参照する(design§4.7「L2のbearシナリオ条件にrisk.categoryを参照する条件型を追加」)。
+"""
 
 from __future__ import annotations
 
@@ -59,13 +63,39 @@ def latest_feature_value(series: pd.Series, feature: str) -> float | None:
     return float(val.iloc[-1]) if not val.empty else None
 
 
+RISK_INDICATOR_PREFIX = "risk:"
+
+
 def evaluate_condition(
     cond: ConditionDef,
     target_key: str,
     as_of: date,
     processed_dir: Path = PROCESSED_DIR,
+    risk_scores: dict[tuple[str, str], float] | None = None,
 ) -> ConditionStatus:
-    """1条件を実データで評価する。指標が無い/データが無い場合はmet=None(観測不能)。"""
+    """1条件を実データで評価する。指標が無い/データが無い場合はmet=None(観測不能)。
+
+    cond.indicatorが"risk:<category>"形式の場合はLayer6のrisk_scoresルックアップ
+    (target_key, category) -> risk_score(0-100) を参照する(risk_scores未指定/該当
+    無しの場合は観測不能)。
+    """
+    if cond.indicator.startswith(RISK_INDICATOR_PREFIX):
+        category = cond.indicator.removeprefix(RISK_INDICATOR_PREFIX)
+        value = risk_scores.get((target_key, category)) if risk_scores else None
+        if value is None:
+            return ConditionStatus(
+                condition_id=cond.condition_id, desc=cond.desc, indicator_key=cond.indicator,
+                measured_value=None, threshold=cond.threshold, met=None,
+                data_quality="unavailable", as_of=as_of.isoformat(),
+            )
+        op_fn = _OPS.get(cond.op)
+        met = op_fn(value, cond.threshold) if op_fn is not None else None
+        return ConditionStatus(
+            condition_id=cond.condition_id, desc=cond.desc, indicator_key=cond.indicator,
+            measured_value=value, threshold=cond.threshold, met=met,
+            data_quality="estimated", as_of=as_of.isoformat(),
+        )
+
     ind = _INDICATORS_BY_KEY.get(cond.indicator)
     if ind is None:
         return ConditionStatus(

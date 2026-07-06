@@ -50,6 +50,34 @@ def _condition(ind_key: str, scenario: str, op: str, threshold: float, weight: f
     }
 
 
+# Layer6(risk)のカテゴリはテーマによって構造的に計算可能かどうかが決まる
+# (src/risk/detectors.pyのTHEME_PEER_BASKETS/capex_cut対象テーマと一致させる)。
+# regulation/dilution/customer_churnはmaterials依存で理論上どのテーマでも
+# 機構自体は動くため全テーマ共通(現状データが薄くunavailableになりやすいが
+# 正直にそのまま条件として残す)。risk_score>=60を「悪化」とみなすbear専用条件。
+UNIVERSAL_RISK_CATEGORIES: list[tuple[str, float]] = [
+    ("regulation", 0.3), ("dilution", 0.3), ("customer_churn", 0.3),
+]
+THEME_SPECIFIC_RISK_CATEGORIES: dict[str, list[tuple[str, float]]] = {
+    "ai_datacenter": [("capex_cut", 1.0), ("competition_loss", 0.5)],
+    "robotics_fa": [("competition_loss", 0.5)],
+    "quantum": [("competition_loss", 0.5)],
+}
+RISK_BEAR_THRESHOLD = 60.0
+
+
+def _risk_condition(category: str, weight: float) -> dict:
+    return {
+        "id": f"risk_{category}_bear",
+        "desc": f"Layer6リスクカテゴリ「{category}」のスコアが{RISK_BEAR_THRESHOLD:.0f}以上(悪化)",
+        "indicator": f"risk:{category}",
+        "feature": "level",
+        "op": ">=",
+        "threshold": RISK_BEAR_THRESHOLD,
+        "weight": round(weight, 2),
+    }
+
+
 def main() -> None:
     by_theme: dict[str, list] = {}
     for ind in INDICATORS:
@@ -65,6 +93,11 @@ def main() -> None:
             bull.append(_condition(ind.key, "bull", ">", 0.0, w))
             neutral.append(_condition(ind.key, "neutral", "abs_lt", NEUTRAL_BAND, w))
             bear.append(_condition(ind.key, "bear", "<", 0.0, w))
+
+        # Layer6リスクカテゴリはbearシナリオのみに追加(design§4.7: risk悪化=弱気材料)。
+        risk_categories = UNIVERSAL_RISK_CATEGORIES + THEME_SPECIFIC_RISK_CATEGORIES.get(theme, [])
+        for category, weight in risk_categories:
+            bear.append(_risk_condition(category, weight))
 
         doc = {
             "theme": theme,
