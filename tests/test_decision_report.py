@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 
 from src.decision.models import ConditionStatus, DecisionRecord, ScenarioAssessment
+from src.notifications.models import Notification
 from src.reporting.decision_report import (
     _detect_signal_divergence,
     _fmt_axis,
@@ -12,9 +13,8 @@ from src.reporting.decision_report import (
     _section_allocation,
     _section_change_log,
     _section_conclusion,
-    _section_decisions,
     _section_discovery,
-    _section_portfolio_signals,
+    _section_holdings_detail,
     _section_prediction_accuracy,
     _section_risk,
     _section_theme_scores,
@@ -72,24 +72,116 @@ class TestSectionThemeScores:
         assert "96" in joined or "95" in joined  # totalの丸め
 
 
-class TestSectionDecisions:
+def _make_notification(target: str, change_reason: str) -> Notification:
+    return Notification(
+        notification_id="n1", trigger_type="decision_change", condition_id="c1",
+        dedup_key="d1", info_as_of="2026-07-04", confirmed_at="2026-07-04T00:00:00",
+        notified_at="2026-07-04T00:00:00", target=target, change_reason=change_reason,
+    )
+
+
+class TestSectionHoldingsDetail:
+    """保有銘柄ごとに根拠を集約する章(P3再設計)。旧_section_decisions/
+    _section_portfolio_signals/_section_technicals/_section_dip_sellを統合。"""
+
     def test_no_records_shows_placeholder(self) -> None:
-        lines = _section_decisions([])
+        lines = _section_holdings_detail(
+            [], pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+            pd.DataFrame(), [],
+        )
         assert any("なし" in line for line in lines)
 
-    def test_renders_action_and_scenario(self) -> None:
+    def test_renders_action_and_scenario_without_aux_data(self) -> None:
         rec = _make_record("fujikura", "追加買い", "bull")
-        lines = _section_decisions([rec])
+        lines = _section_holdings_detail(
+            [rec], pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+            pd.DataFrame(), [],
+        )
         joined = "\n".join(lines)
         assert "fujikura" in joined
         assert "追加買い" in joined
         assert "現在地:強気" in joined
+        assert "検知なし" in joined  # リスクデータなしは「検知なし」と明示
 
     def test_includes_change_reason_when_set(self) -> None:
         rec = _make_record("fujikura", "売却", "bear")
         rec.change_reason = "投資判断: 保有継続→売却"
-        lines = _section_decisions([rec])
+        lines = _section_holdings_detail(
+            [rec], pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+            pd.DataFrame(), [],
+        )
         assert any("投資判断: 保有継続→売却" in line for line in lines)
+
+    def test_consolidates_all_sources_with_condition_text_and_divergence(self) -> None:
+        active_assessment = ScenarioAssessment(
+            theme="ai_datacenter", scenario_type="bear", fulfillment_rate=0.33,
+            conditions=[
+                ConditionStatus(
+                    condition_id="c1", desc="risk:capex_cut悪化", indicator_key="risk:capex_cut",
+                    measured_value=65.0, threshold=60.0, met=True,
+                    data_quality="verified", as_of="2026-07-04",
+                ),
+                ConditionStatus(
+                    condition_id="c2", desc="nvidia_revenue勢い<0", indicator_key="nvidia_revenue",
+                    measured_value=None, threshold=0.0, met=None,
+                    data_quality="unavailable", as_of="2026-07-04",
+                ),
+            ],
+            unmet=[],
+            unobservable=[
+                ConditionStatus(
+                    condition_id="c2", desc="nvidia_revenue勢い<0", indicator_key="nvidia_revenue",
+                    measured_value=None, threshold=0.0, met=None,
+                    data_quality="unavailable", as_of="2026-07-04",
+                ),
+            ],
+        )
+        rec = DecisionRecord(
+            decision_id="dec_2026-07-04_fujikura", as_of="2026-07-04", target="fujikura",
+            theme="ai_datacenter", action="一部利確", active_scenario="bear",
+            scenario_assessments=[active_assessment], reason="テスト理由", confidence=0.8,
+        )
+        theme_df = pd.DataFrame([{
+            "theme": "ai_datacenter", "name_ja": "AIデータセンター",
+            "structural_change": None, "supply_demand": 99.0, "earnings": 100.0,
+            "valuation": None, "fund_flow": 79.2, "policy_tailwind": None,
+            "total": 96.0, "confidence_pct": 0.55,
+        }])
+        signals_df = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "hard_score": None,
+            "extended_score": 97.0, "confidence_pct": 1.0, "outlook": "中立-強気",
+        }])
+        tech_df = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "rsi": 49.0,
+            "ma25_dev": 3.9, "ma200_dev": 36.9, "tech_outlook": "過熱警戒",
+        }])
+        ds_df = pd.DataFrame([{
+            "target": "fujikura", "name_ja": "フジクラ", "dip_score": 20.0,
+            "sell_score": 75.0, "hold_score": 25.0, "decision": "売り時候補",
+        }])
+        risk_df = pd.DataFrame([{
+            "theme": "ai_datacenter", "target": "fujikura", "category": "capex_cut",
+            "risk_score": 65.0, "deteriorated": True, "evidence": "CAPEX前年比-12%",
+            "data_quality": "verified", "as_of": "2026-07-04",
+        }])
+        notifs = [_make_notification("fujikura", "sell_score=75到達")]
+
+        lines = _section_holdings_detail(
+            [rec], theme_df, signals_df, tech_df, ds_df, risk_df, notifs,
+        )
+        joined = "\n".join(lines)
+
+        assert "フジクラ" in joined  # signals_dfのname_jaで名寄せされる
+        assert "96" in joined  # テーマスコア
+        assert "97" in joined  # Extendedスコア
+        assert "RSI49" in joined
+        assert "sell75" in joined
+        assert "CAPEX前年比-12%" in joined  # リスク根拠がインラインで見える
+        assert "逆方向" in joined  # 中立-強気 x 売り時候補のシグナル相違警告
+        assert "⭐成立" in joined  # 成立条件の中身(従来は件数のみで非表示だった)
+        assert "risk:capex_cut悪化" in joined
+        assert "❓観測不能" in joined
+        assert "sell_score=75到達" in joined  # 銘柄別通知
 
 
 class TestSectionChangeLog:
@@ -170,48 +262,6 @@ class TestDetectSignalDivergence:
 
     def test_hold_decision_no_divergence(self) -> None:
         assert _detect_signal_divergence("中立-強気", "保有継続") is None
-
-
-class TestSectionPortfolioSignalsDivergenceIntegration:
-    def test_divergence_note_appears_when_signals_conflict(self) -> None:
-        signals = pd.DataFrame([{
-            "target": "fujikura", "name_ja": "フジクラ", "hard_score": None,
-            "extended_score": 97.1, "confidence_pct": 1.0, "outlook": "中立-強気",
-            "action": "保有継続(監視)",
-        }])
-        dipsell = pd.DataFrame([{
-            "target": "fujikura", "name_ja": "フジクラ", "decision": "売り時候補",
-        }])
-        lines = _section_portfolio_signals(signals, dipsell)
-        text = "\n".join(lines)
-        assert "シグナル相違" in text
-        assert "フジクラ" in text
-
-    def test_no_divergence_note_when_aligned(self) -> None:
-        signals = pd.DataFrame([{
-            "target": "fujikura", "name_ja": "フジクラ", "hard_score": None,
-            "extended_score": 97.1, "confidence_pct": 1.0, "outlook": "強気",
-            "action": "追加",
-        }])
-        dipsell = pd.DataFrame([{
-            "target": "fujikura", "name_ja": "フジクラ", "decision": "押し目候補",
-        }])
-        lines = _section_portfolio_signals(signals, dipsell)
-        text = "\n".join(lines)
-        assert "シグナル相違" not in text
-
-    def test_missing_dipsell_df_does_not_crash(self) -> None:
-        signals = pd.DataFrame([{
-            "target": "fujikura", "name_ja": "フジクラ", "hard_score": None,
-            "extended_score": 97.1, "confidence_pct": 1.0, "outlook": "中立-強気",
-            "action": "保有継続(監視)",
-        }])
-        lines = _section_portfolio_signals(signals, None)
-        assert len(lines) > 0
-
-    def test_empty_df_shows_placeholder(self) -> None:
-        lines = _section_portfolio_signals(pd.DataFrame())
-        assert any("なし" in line for line in lines)
 
 
 # ---------------------------------------------------------------------------

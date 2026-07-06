@@ -5,13 +5,14 @@ daily_report.py(公開、GitHub Pagesへデプロイされる)とは意図的に
 docs/investment_os_design.md §8確定事項により公開してはいけない。出力先は
 private/decision_report.md(プロジェクトルートの.gitignore対象)。
 
-章立て(§4.10要件のうち、現時点で実装済みのレイヤーの分のみ構成する。
-未実装のレイヤー(L6リスク/L9配分/L7-8発掘)は正直に「未実装」と明示し、
-存在しないデータを捏造しない):
-  ①ヘッダ → ②Early Signal(材料) → ③テーマスコア6軸 → ④リスク(未実装)
-  → ⑤投資判断(成立条件/現在地/成立率/未成立条件/判断理由/変更理由)
-  → ⑥判断変更ログ → ⑦予測検証成績 → ⑧配分提案(未実装) → ⑨発掘ランキング(未実装)
-  → ⑩最終結論
+章立て(P3で「銘柄ごとの判断を理解するのに複数章を往復する必要がある」との
+指摘を受け、保有銘柄単位に根拠を集約する構成へ再設計。未実装のレイヤー
+(L7-8発掘)は正直に「未実装」と明示し、存在しないデータを捏造しない):
+  ①ヘッダ → ②サマリー(全体の内訳・要注意判断) → ③本日の通知
+  → ④リスクフラグ(悪化検知の速報) → ⑤保有銘柄別 詳細(テーマスコア内訳/
+  シグナル/テクニカル/押し目・売り時/リスク/成立条件の中身を1銘柄1章に集約)
+  → ⑥テーマスコア6軸(横断比較用) → ⑦Early Signal(材料note)
+  → ⑧判断変更ログ → ⑨予測検証成績 → ⑩配分提案 → ⑪発掘ランキング(未実装)
 
 入力契約: outputs/*.csv, outputs/prediction_accuracy.csv, private/decisions/*.jsonl
 の読み取り専用。判定ロジック(decision/scoring/prediction)は import するが、
@@ -28,8 +29,9 @@ import pandas as pd
 
 from src.config import OUTPUTS, PRIVATE_OUTPUTS
 from src.decision.diff import diff
-from src.decision.models import DecisionRecord
+from src.decision.models import DecisionRecord, ScenarioAssessment
 from src.decision.store import PRIVATE_DECISIONS_DIR, load_decisions, load_previous
+from src.notifications.models import Notification
 
 logger = logging.getLogger(__name__)
 
@@ -216,96 +218,17 @@ def _detect_signal_divergence(outlook: str, dip_decision: str | None) -> str | N
     return None
 
 
-def _section_portfolio_signals(
-    df: pd.DataFrame, dipsell_df: pd.DataFrame | None = None,
-) -> list[str]:
-    lines: list[str] = ["## ポートフォリオ シグナル", ""]
-    if df.empty or "target" not in df.columns:
-        lines += ["*private/portfolio_signal_scores.csv なし(Step3未実行)*", ""]
-        return lines
-    portfolio = df.copy()
-
-    dip_decision_by_target: dict[str, str] = {}
-    if dipsell_df is not None and not dipsell_df.empty and "target" in dipsell_df.columns:
-        dip_decision_by_target = dict(
-            zip(dipsell_df["target"], dipsell_df.get("decision", ""), strict=False)
-        )
-
-    lines.append("| 銘柄 | Hard | Extended | Confidence | Outlook | Action |")
-    lines.append("|------|-----:|---------:|:----------:|---------|--------|")
-    divergences: list[str] = []
-    for _, row in portfolio.iterrows():
-        outlook = str(row.get("outlook", ""))
-        icon = _outlook_icon(outlook)
-        target = str(row.get("target", ""))
-        name_ja = str(row.get("name_ja", target))
-        lines.append(
-            f"| {name_ja} "
-            f"| {_fmt_axis(row.get('hard_score'))} "
-            f"| {_fmt_axis(row.get('extended_score'))} "
-            f"| {_fmt_pct(row.get('confidence_pct'))} "
-            f"| {icon} {outlook} "
-            f"| {row.get('action', '--')} |"
-        )
-        warning = _detect_signal_divergence(outlook, dip_decision_by_target.get(target))
-        if warning:
-            divergences.append(f"**{name_ja}**: {warning}")
-
-    hard_avg = portfolio["hard_score"].dropna().mean()
-    ext_avg = portfolio["extended_score"].dropna().mean()
-    lines.append("")
-    lines.append(
-        f"**ポートフォリオ平均** — Hard: {_fmt_axis(hard_avg)} / Extended: {_fmt_axis(ext_avg)}"
-    )
-    lines.append("")
-
-    if divergences:
-        lines.append(f"<details><summary>⚠️ シグナル相違あり({len(divergences)}件)</summary>")
-        lines.append("")
-        for d in divergences:
-            lines.append(f"- {d}")
-        lines.append("")
-        lines.append("</details>")
-        lines.append("")
-
-    return lines
-
-
 _TECH_ICON: dict[str, str] = {
     "強い押し目候補": "🟢", "押し目候補": "🟡", "中立": "⚪",
     "過熱警戒": "🟠", "強い過熱警戒": "🔴", "データ不足": "❓", "不明": "❓",
 }
 
 
-def _section_technicals(tech: pd.DataFrame) -> list[str]:
-    lines: list[str] = ["## テクニカル判定 (RSI・移動平均乖離)", ""]
-    if tech is None or tech.empty:
-        lines += ["*private/technical_scores.csv なし(Step3未実行)*", ""]
-        return lines
-
-    def _icon(outlook: str) -> str:
-        for k, ic in _TECH_ICON.items():
-            if k in outlook:
-                return ic
-        return "⚪"
-
-    lines.append("| 銘柄 | RSI | 25MA乖離 | 200MA乖離 | 判定 |")
-    lines.append("|------|----:|--------:|---------:|------|")
-    for _, row in tech.iterrows():
-        rsi = _fmt_axis(row.get("rsi"))
-        d25 = f"{float(row.get('ma25_dev')):+.1f}%" if pd.notna(row.get("ma25_dev")) else "--"
-        d200 = f"{float(row.get('ma200_dev')):+.1f}%" if pd.notna(row.get("ma200_dev")) else "--"
-        out = str(row.get("tech_outlook", "--"))
-        icon = _icon(out)
-        lines.append(
-            f"| {row.get('name_ja', row.get('target',''))} "
-            f"| {rsi} | {d25} | {d200} | {icon} {out} |"
-        )
-    lines.append("")
-    lines.append("> RSI<30 + 200MA乖離<-10% = 強い押し目候補  "
-                 "| RSI>70 + 200MA乖離>+20% = 強い過熱警戒")
-    lines.append("")
-    return lines
+def _tech_icon(outlook: str) -> str:
+    for key, icon in _TECH_ICON.items():
+        if key in outlook:
+            return icon
+    return "⚪"
 
 
 _DIP_DECISION_ICON: dict[str, str] = {
@@ -314,52 +237,24 @@ _DIP_DECISION_ICON: dict[str, str] = {
 }
 
 
-def _section_dip_sell(ds: pd.DataFrame) -> list[str]:
-    lines: list[str] = ["## 押し目・売り時判定 (簡易版・暫定)", ""]
-    lines.append(
-        "> ⚠️ 材料データ(ガイダンス修正・受注残変化等)は未反映の暫定版。"
-        "テクニカル指標(RSI/MA乖離)とHard/Extendedスコアのみで近似。"
-    )
-    lines.append("")
-    if ds is None or ds.empty:
-        lines += ["*private/dip_sell_scores.csv なし(Step3未実行)*", ""]
-        return lines
-
-    lines.append("| 銘柄 | dip_score | sell_score | hold_score | 判定 | 推奨アクション |")
-    lines.append("|------|----------:|-----------:|-----------:|------|---------------|")
-    for _, row in ds.iterrows():
-        dip = _fmt_axis(row.get("dip_score"))
-        sell = _fmt_axis(row.get("sell_score"))
-        hold = _fmt_axis(row.get("hold_score"))
-        dec = str(row.get("decision", "--"))
-        icon = _DIP_DECISION_ICON.get(dec, "⚪")
-        lines.append(
-            f"| {row.get('name_ja', row.get('target',''))} "
-            f"| {dip} | {sell} | {hold} "
-            f"| {icon} {dec} | {row.get('recommended_action', '--')} |"
-        )
-    lines.append("")
-    return lines
-
-
 _TRIGGER_ICON: dict[str, str] = {
     "dip": "🟢", "sell": "🔴", "demand_index": "🔵", "ai_bubble": "🟠",
     "collapse": "🚨", "decision_change": "🟡", "capex": "🟣", "material": "📰",
 }
 
 
-def _section_notifications() -> list[str]:
+def _load_active_notifications() -> list[Notification]:
     """通知(prev/curr judgmentを含むため非公開)。private/notifications/を読む。"""
-    lines: list[str] = ["## 🔔 本日の通知", ""]
     try:
         from src.notifications.store import load_notifications
-        notifications = [n for n in load_notifications() if n.status == "active"]
+        return [n for n in load_notifications() if n.status == "active"]
     except Exception as exc:
         logger.warning("notifications load failed: %s", exc)
-        lines += ["*通知データなし (Step6 未実行)*", ""]
-        return lines
+        return []
 
-    lines[0] = f"## 🔔 本日の通知 ({len(notifications)}件)"
+
+def _section_notifications(notifications: list[Notification]) -> list[str]:
+    lines: list[str] = [f"## 🔔 本日の通知 ({len(notifications)}件)", ""]
     if not notifications:
         lines += ["*本日、通知条件を満たす変化はありませんでした*", ""]
         return lines
@@ -384,47 +279,203 @@ def _section_notifications() -> list[str]:
 # ⑤投資判断(必須6項目) + ⑥判断変更ログ
 # ---------------------------------------------------------------------------
 
-def _section_decisions(records: list[DecisionRecord]) -> list[str]:
-    lines: list[str] = ["## 投資判断(Layer2)", ""]
+def _build_target_name_map(*dfs: pd.DataFrame | None) -> dict[str, str]:
+    names: dict[str, str] = {}
+    for df in dfs:
+        if df is None or df.empty or "target" not in df.columns:
+            continue
+        for _, row in df.iterrows():
+            target = str(row.get("target", ""))
+            if target and target not in names:
+                names[target] = str(row.get("name_ja", target))
+    return names
+
+
+def _render_conditions(assessment: ScenarioAssessment) -> list[str]:
+    """成立/未成立/観測不能の条件を実際の説明文つきで列挙する(件数だけでなく中身を見せる)。"""
+    lines: list[str] = []
+    met = [c for c in assessment.conditions if c.met is True]
+    if met:
+        detail = "、".join(
+            f"{c.desc}(実測値={c.measured_value:.3f})" if c.measured_value is not None else c.desc
+            for c in met
+        )
+        lines.append(f"- ⭐成立({len(met)}件): {detail}")
+    if assessment.unmet:
+        detail = "、".join(
+            f"{c.desc}(実測値={c.measured_value:.3f})" if c.measured_value is not None else c.desc
+            for c in assessment.unmet
+        )
+        lines.append(f"- ❌未成立({len(assessment.unmet)}件): {detail}")
+    if assessment.unobservable:
+        detail = "、".join(
+            f"{c.desc}(データなし、data_quality={c.data_quality})"
+            for c in assessment.unobservable
+        )
+        lines.append(f"- ❓観測不能({len(assessment.unobservable)}件): {detail}")
+    return lines
+
+
+def _section_holdings_detail(
+    records: list[DecisionRecord],
+    theme_scores_df: pd.DataFrame,
+    signals_df: pd.DataFrame,
+    tech_df: pd.DataFrame,
+    ds_df: pd.DataFrame,
+    risk_df: pd.DataFrame,
+    notifications: list[Notification],
+) -> list[str]:
+    """保有銘柄1件につき1章で、判断とその根拠(テーマスコア内訳・シグナル・テクニカル・
+    リスク・成立条件の中身)を全て集約する。従来はこれらが5つの章に分散していたため、
+    「何を根拠にどう判断したか」を追うのに複数表を往復する必要があった(ユーザー指摘により再設計)。
+    """
+    lines: list[str] = ["## 保有銘柄別 詳細(判断の根拠)", ""]
     if not records:
         lines += ["*private/decisions/ にレコードなし(--step 8 未実行)*", ""]
         return lines
 
+    theme_row_by_theme: dict[str, pd.Series] = (
+        {str(row["theme"]): row for _, row in theme_scores_df.iterrows()}
+        if not theme_scores_df.empty else {}
+    )
+    signal_by_target: dict[str, pd.Series] = (
+        {str(row["target"]): row for _, row in signals_df.iterrows()}
+        if signals_df is not None and not signals_df.empty and "target" in signals_df.columns
+        else {}
+    )
+    tech_by_target: dict[str, pd.Series] = (
+        {str(row["target"]): row for _, row in tech_df.iterrows()}
+        if tech_df is not None and not tech_df.empty and "target" in tech_df.columns
+        else {}
+    )
+    dipsell_by_target: dict[str, pd.Series] = (
+        {str(row["target"]): row for _, row in ds_df.iterrows()}
+        if ds_df is not None and not ds_df.empty and "target" in ds_df.columns
+        else {}
+    )
+    risk_by_target: dict[str, list[pd.Series]] = {}
+    if risk_df is not None and not risk_df.empty:
+        for _, row in risk_df[risk_df["deteriorated"] == True].iterrows():  # noqa: E712
+            risk_by_target.setdefault(str(row["target"]), []).append(row)
+    notif_by_target: dict[str, list[Notification]] = {}
+    for n in notifications:
+        if n.target:
+            notif_by_target.setdefault(n.target, []).append(n)
+
+    name_map = _build_target_name_map(signals_df, tech_df, ds_df)
+
     for r in records:
+        name = name_map.get(r.target, r.target)
         icon = _SCENARIO_ICON.get(r.active_scenario, "⚪")
         label = _SCENARIO_LABEL.get(r.active_scenario, r.active_scenario)
-        lines.append(f"### {r.target}({r.theme}) — {r.action} {icon}現在地:{label}")
+        lines.append(f"### {name}({r.theme}) — {r.action} {icon}現在地:{label}")
         lines.append("")
         lines.append(f"- 判断理由: {r.reason}")
         lines.append(f"- 変更理由: {r.change_reason or '(前回から変更なし)'}")
         lines.append(f"- Confidence: {_fmt_pct(r.confidence)}")
-        if r.theme_score is not None:
-            lines.append(f"- テーマスコア: {r.theme_score:.0f}")
         lines.append("")
 
-        lines.append("| シナリオ | 成立率 | 成立条件 | 未成立条件 | 観測不能 |")
-        lines.append("|---|---:|---:|---:|---:|")
-        for a in r.scenario_assessments:
-            n_met = len(a.conditions) - len(a.unmet) - len(a.unobservable)
-            slabel = _SCENARIO_LABEL.get(a.scenario_type, a.scenario_type)
-            lines.append(
-                f"| {slabel} | {_fmt_pct(a.fulfillment_rate)} "
-                f"| {n_met} | {len(a.unmet)} | {len(a.unobservable)} |"
+        lines.append("| 根拠項目 | 値 | 意味 |")
+        lines.append("|---|---|---|")
+
+        theme_row = theme_row_by_theme.get(r.theme)
+        if theme_row is not None:
+            breakdown = (
+                f"構造{_fmt_axis(theme_row.get('structural_change'))}"
+                f"・需給{_fmt_axis(theme_row.get('supply_demand'))}"
+                f"・業績{_fmt_axis(theme_row.get('earnings'))}"
+                f"・valuation{_fmt_axis(theme_row.get('valuation'))}"
+                f"・資金流入{_fmt_axis(theme_row.get('fund_flow'))}"
+                f"・政策{_fmt_axis(theme_row.get('policy_tailwind'))}"
             )
+            lines.append(
+                f"| テーマスコア | {_fmt_axis(theme_row.get('total'))}/100"
+                f"(confidence {_fmt_pct(theme_row.get('confidence_pct'))}) | {breakdown} |"
+            )
+        else:
+            lines.append("| テーマスコア | -- | theme_scores.csv なし |")
+
+        signal_row = signal_by_target.get(r.target)
+        outlook = str(signal_row.get("outlook", "")) if signal_row is not None else ""
+        if signal_row is not None:
+            lines.append(
+                f"| ポートフォリオシグナル | Hard{_fmt_axis(signal_row.get('hard_score'))} "
+                f"/ Extended{_fmt_axis(signal_row.get('extended_score'))}"
+                f"(confidence {_fmt_pct(signal_row.get('confidence_pct'))}) "
+                f"| {_outlook_icon(outlook)} {outlook} |"
+            )
+        else:
+            lines.append("| ポートフォリオシグナル | -- | portfolio_signal_scores.csv なし |")
+
+        tech_row = tech_by_target.get(r.target)
+        if tech_row is not None:
+            d25 = (
+                f"{float(tech_row.get('ma25_dev')):+.1f}%"
+                if pd.notna(tech_row.get("ma25_dev")) else "--"
+            )
+            d200 = (
+                f"{float(tech_row.get('ma200_dev')):+.1f}%"
+                if pd.notna(tech_row.get("ma200_dev")) else "--"
+            )
+            tech_outlook = str(tech_row.get("tech_outlook", "--"))
+            lines.append(
+                f"| 株価テクニカル | RSI{_fmt_axis(tech_row.get('rsi'))}, "
+                f"25MA{d25}, 200MA{d200} | {_tech_icon(tech_outlook)} {tech_outlook} |"
+            )
+        else:
+            lines.append("| 株価テクニカル | -- | technical_scores.csv なし |")
+
+        dip_row = dipsell_by_target.get(r.target)
+        dip_decision: str | None = None
+        if dip_row is not None:
+            dip_decision = str(dip_row.get("decision", "--"))
+            lines.append(
+                f"| 押し目/売り時判定 | dip{_fmt_axis(dip_row.get('dip_score'))} "
+                f"sell{_fmt_axis(dip_row.get('sell_score'))} "
+                f"hold{_fmt_axis(dip_row.get('hold_score'))} "
+                f"| {_DIP_DECISION_ICON.get(dip_decision, '⚪')} {dip_decision}(暫定版) |"
+            )
+        else:
+            lines.append("| 押し目/売り時判定 | -- | dip_sell_scores.csv なし |")
+
+        risk_items = risk_by_target.get(r.target, [])
+        if risk_items:
+            evidence = "、".join(
+                f"{_RISK_CATEGORY_LABEL.get(str(i.get('category')), str(i.get('category')))}"
+                f"(score={_fmt_axis(i.get('risk_score'))}: {i.get('evidence')})"
+                for i in risk_items
+            )
+            lines.append(f"| Layer6リスク | ⚠️検知あり | {evidence} |")
+        else:
+            lines.append("| Layer6リスク | 検知なし | -- |")
+        lines.append("")
+
+        warning = _detect_signal_divergence(outlook, dip_decision)
+        if warning:
+            lines.append(f"> {warning}")
+            lines.append("")
+
+        lines.append("| シナリオ | 成立率 |")
+        lines.append("|---|---:|")
+        for a in r.scenario_assessments:
+            slabel = _SCENARIO_LABEL.get(a.scenario_type, a.scenario_type)
+            lines.append(f"| {slabel} | {_fmt_pct(a.fulfillment_rate)} |")
         lines.append("")
 
         active = next(
             (a for a in r.scenario_assessments if a.scenario_type == r.active_scenario), None
         )
-        if active is not None and (active.unmet or active.unobservable):
-            lines.append(f"<details><summary>現在地シナリオ({label})の未成立/観測不能条件</summary>")
+        if active is not None and active.conditions:
+            lines.append(f"**現在地シナリオ({label})の判定根拠**")
             lines.append("")
-            for c in active.unmet:
-                lines.append(f"- ❌未成立: {c.desc}(実測値={c.measured_value:.3f})")
-            for c in active.unobservable:
-                lines.append(f"- ❓観測不能: {c.desc}(データなし、data_quality={c.data_quality})")
+            lines.extend(_render_conditions(active))
             lines.append("")
-            lines.append("</details>")
+
+        target_notifs = notif_by_target.get(r.target, [])
+        if target_notifs:
+            lines.append("**🔔 本日の関連通知**")
+            for n in target_notifs:
+                lines.append(f"- {n.change_reason}")
             lines.append("")
 
     return lines
@@ -520,11 +571,13 @@ def _section_discovery() -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# ⑩最終結論
+# サマリー(冒頭に配置。詳細な根拠は「保有銘柄別 詳細」章を参照)
 # ---------------------------------------------------------------------------
 
-def _section_conclusion(records: list[DecisionRecord]) -> list[str]:
-    lines: list[str] = ["## 最終結論", ""]
+def _section_conclusion(
+    records: list[DecisionRecord], notifications: list[Notification] | None = None,
+) -> list[str]:
+    lines: list[str] = ["## 📋 サマリー", ""]
     if not records:
         lines += ["*判断データなし*", ""]
         return lines
@@ -543,6 +596,10 @@ def _section_conclusion(records: list[DecisionRecord]) -> list[str]:
         lines.append(f"- ⚠️ 要注意判断: {names}")
     else:
         lines.append("- 一部利確・売却の判断は本日ありません")
+    if notifications:
+        lines.append(f"- 🔔 本日の通知: {len(notifications)}件(詳細は次章)")
+    lines.append("- 各銘柄の判断根拠(テーマスコア内訳・シグナル・テクニカル・リスク・"
+                 "成立条件の中身)は「保有銘柄別 詳細」章にまとめて記載")
     lines.append("")
     return lines
 
@@ -564,22 +621,24 @@ def generate_decision_report(as_of: date | None = None) -> str:
     ds_df = _load_csv("dip_sell_scores.csv", PRIVATE_DIR)
     risk_df = _load_csv("risk_scores.csv", PRIVATE_DIR)
     allocation_df = _load_csv("allocation.csv", PRIVATE_DIR)
+    notifications = _load_active_notifications()
 
     lines: list[str] = []
     lines.extend(_section_header(d))
-    lines.extend(_section_notifications())
-    lines.extend(_section_early_signal(theme_scores_df))
-    lines.extend(_section_theme_scores(theme_scores_df))
+    lines.extend(_section_conclusion(records, notifications))
+    lines.extend(_section_notifications(notifications))
     lines.extend(_section_risk(risk_df))
-    lines.extend(_section_portfolio_signals(signals_df, ds_df))
-    lines.extend(_section_technicals(tech_df))
-    lines.extend(_section_dip_sell(ds_df))
-    lines.extend(_section_decisions(records))
+    lines.extend(
+        _section_holdings_detail(
+            records, theme_scores_df, signals_df, tech_df, ds_df, risk_df, notifications,
+        )
+    )
+    lines.extend(_section_theme_scores(theme_scores_df))
+    lines.extend(_section_early_signal(theme_scores_df))
     lines.extend(_section_change_log(records, prev))
     lines.extend(_section_prediction_accuracy(acc_df))
     lines.extend(_section_allocation(allocation_df))
     lines.extend(_section_discovery())
-    lines.extend(_section_conclusion(records))
 
     lines += ["---", f"*生成: {datetime.now().isoformat()} | 非公開レポート、公開禁止*"]
 
