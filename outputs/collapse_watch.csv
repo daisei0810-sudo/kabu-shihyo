@@ -1,7 +1,7 @@
 ﻿name,deteriorated,value_note,available
-長期金利上昇,False,65日変化=+0.17%pt(閾値+0.3%pt),True
-SOX指数下落,False,25日MA乖離=-2.6%(閾値-5%),True
-NVIDIA株価下落,False,25日MA乖離=-4.8%(閾値-8%),True
+長期金利上昇,False,65日変化=+0.18%pt(閾値+0.3%pt),True
+SOX指数下落,False,25日MA乖離=-3.5%(閾値-5%),True
+NVIDIA株価下落,False,25日MA乖離=-4.9%(閾値-8%),True
 ハイパースケーラーCAPEX減速,False,QoQ=+9%(マイナスで悪化),True
-光通信バスケット下落,False,25日MA乖離=-1.3%(閾値-7%),True
-VIX急騰,False,VIX=16.0(閾値>25),True
+光通信バスケット下落,True,25日MA乖離=-7.7%(閾値-7%),True
+VIX急騰,False,VIX=15.8(閾値>25),True

@@ -213,6 +213,25 @@ def run_step11() -> None:
     logger.info("=" * 60)
 
 
+def run_step12() -> None:
+    """Step12: 新規発掘エンジン(Investment OS Layer7/8)。Step8・Step10完了後に実行する。
+
+    非保有銘柄のランキング(L7)と新テーマ候補の追跡(L9)。保有銘柄の判断を
+    一切含まないため、他レイヤーと異なり公開データとして outputs/ へ出力する
+    (docs/investment_os_design.md §8確定事項の対象外)。`--step all` に含む。
+    """
+    logger.info("=" * 60)
+    logger.info("Step12: 新規発掘エンジン開始  %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    logger.info("=" * 60)
+
+    from src.discovery.pipeline import run_discovery
+    try:
+        run_discovery()
+    except Exception as exc:
+        logger.warning("新規発掘エンジン失敗(後続ステップは継続実行): %s", exc)
+    logger.info("=" * 60)
+
+
 def run_step9() -> None:
     """Step9: 意思決定エンジン(Investment OS Layer2)。Step3(・Step8)完了後に実行する。
 
@@ -330,13 +349,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="先行指標監視システム")
     parser.add_argument(
         "--step",
-        choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "all"],
+        choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "all"],
         default="1",
         help="実行するステップ (default: 1)。5(材料取込)・9(意思決定エンジン)・"
              "11(資金配分)は明示指定時のみ実行、allには未含有(5はPhase6動作確認中、"
              "9・11は非公開出力のため日次自動実行はdaily.yml側でPRIVATE_REPO_PAT設定時"
-             "のみ個別に呼ぶ)。6(通知)・7(予測台帳)・8(テーマスコア)・10(リスク)はallに含む。"
-             "all の実行順は 1→2→3→8→10→7→6→4",
+             "のみ個別に呼ぶ)。6(通知)・7(予測台帳)・8(テーマスコア)・10(リスク)・"
+             "12(新規発掘、保有銘柄を含まないため公開)はallに含む。"
+             "all の実行順は 1→2→3→8→10→12→7→6→4",
     )
     args = parser.parse_args()
 
@@ -360,6 +380,9 @@ def main() -> None:
 
     if args.step in ("10", "all"):
         run_step10()
+
+    if args.step in ("12", "all"):
+        run_step12()
 
     if args.step in ("7", "all"):
         run_step7()

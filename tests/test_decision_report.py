@@ -318,6 +318,20 @@ class TestSectionAllocation:
 
 
 class TestSectionDiscovery:
-    def test_shows_not_implemented(self) -> None:
-        lines = _section_discovery()
-        assert any("未実装" in line for line in lines)
+    def test_empty_dfs_show_placeholder(self) -> None:
+        lines = _section_discovery(pd.DataFrame(), pd.DataFrame())
+        assert any("--step 12 未実行" in line for line in lines)
+
+    def test_renders_company_and_theme_rows(self) -> None:
+        companies_df = pd.DataFrame([{
+            "rank": 1, "company": "nvidia", "name_ja": "NVIDIA", "theme": "ai_datacenter",
+            "expected_value": 96.0, "relative_momentum": 3.2, "thesis": "テーマスコア96",
+        }])
+        themes_df = pd.DataFrame([{
+            "theme": "bio", "name_ja": "バイオ", "materials_trend_note": "関連材料0件",
+            "data_quality": "unavailable",
+        }])
+        lines = _section_discovery(companies_df, themes_df)
+        joined = "\n".join(lines)
+        assert "NVIDIA" in joined
+        assert "バイオ" in joined

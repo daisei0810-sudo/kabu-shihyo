@@ -563,11 +563,48 @@ def _section_allocation(allocation_df: pd.DataFrame) -> list[str]:
     return lines
 
 
-def _section_discovery() -> list[str]:
-    return [
-        "## 発掘ランキング(Layer7-8)", "",
-        "*未実装(docs/investment_os_design.md フェーズP4で対応予定)。*", "",
-    ]
+def _section_discovery(
+    companies_df: pd.DataFrame, themes_df: pd.DataFrame,
+) -> list[str]:
+    lines: list[str] = ["## 発掘ランキング(Layer7-8)", ""]
+    lines.append(
+        "> 保有銘柄の判断を含まない公開データ(outputs/discovery_companies.csv, "
+        "outputs/discovery_themes.csv)。参考として本レポートにも転記する。"
+    )
+    lines.append("")
+
+    lines.append("### 新規投資候補(非保有銘柄ランキング)")
+    lines.append("")
+    if companies_df.empty:
+        lines += ["*outputs/discovery_companies.csv なし(--step 12 未実行)*", ""]
+    else:
+        lines.append("| rank | 銘柄 | テーマ | expected_value | 相対モメンタム | 根拠 |")
+        lines.append("|---:|---|---|---:|---:|---|")
+        for _, row in companies_df.head(10).iterrows():
+            rel = row.get("relative_momentum")
+            lines.append(
+                f"| {row.get('rank')} | {row.get('name_ja', row.get('company'))} "
+                f"| {row.get('theme')} | {_fmt_axis(row.get('expected_value'))} "
+                f"| {f'{float(rel):+.1f}%' if pd.notna(rel) else '--'} | {row.get('thesis')} |"
+            )
+        lines.append("")
+
+    lines.append("### 新テーマ候補(status=watch)")
+    lines.append("")
+    if themes_df.empty:
+        lines += ["*outputs/discovery_themes.csv なし(--step 12 未実行、"
+                   "またはwatchテーマなし)*", ""]
+    else:
+        lines.append("| テーマ | 材料トレンド | data_quality |")
+        lines.append("|---|---|:---:|")
+        for _, row in themes_df.iterrows():
+            lines.append(
+                f"| {row.get('name_ja', row.get('theme'))} "
+                f"| {row.get('materials_trend_note')} | {row.get('data_quality')} |"
+            )
+        lines.append("")
+
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -621,6 +658,8 @@ def generate_decision_report(as_of: date | None = None) -> str:
     ds_df = _load_csv("dip_sell_scores.csv", PRIVATE_DIR)
     risk_df = _load_csv("risk_scores.csv", PRIVATE_DIR)
     allocation_df = _load_csv("allocation.csv", PRIVATE_DIR)
+    discovery_companies_df = _load_csv("discovery_companies.csv")
+    discovery_themes_df = _load_csv("discovery_themes.csv")
     notifications = _load_active_notifications()
 
     lines: list[str] = []
@@ -638,7 +677,7 @@ def generate_decision_report(as_of: date | None = None) -> str:
     lines.extend(_section_change_log(records, prev))
     lines.extend(_section_prediction_accuracy(acc_df))
     lines.extend(_section_allocation(allocation_df))
-    lines.extend(_section_discovery())
+    lines.extend(_section_discovery(discovery_companies_df, discovery_themes_df))
 
     lines += ["---", f"*生成: {datetime.now().isoformat()} | 非公開レポート、公開禁止*"]
 
