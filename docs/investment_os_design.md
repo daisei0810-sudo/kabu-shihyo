@@ -494,3 +494,108 @@ P4スコープ(L7新規投資発掘・L8新テーマ発掘)を実装済み。両
 - **philosophy.yaml未整備**: 設計書§4.1のLayer0哲学フィルタ(ボトルネック性の手動タグ)はまだ存在しないため、L7の(3)フィルタは実装を見送った。将来philosophy.yamlが整備されたらcompute_discovery_companies()にフィルタ引数を追加する形で拡張可能
 - **L8の「新テーマ自動発掘」は意図的に非実装**: 設計書は「materialsのテーマ別出現件数トレンド」を入力とするが、これは既に`themes.csv`に登録済みのテーマを追跡する仕組みであり、未登録の新テーマをゼロから発見する仕組みではない。後者にはNLPクラスタリング等が必要で、現状のmaterials蓄積量(6件)では実装しても捏造に等しい結果になるため見送った
 - **config/rss_sources.csvの拡充は見送り**: 設計書は「arXiv・政府予算・VCニュースのRSS追加」もP4スコープに含めるが、実在の有効なフィードURLを検証なしに追加すると「取得0件のまま気づかれずに運用され続けるリスク」があるため(config/README.md既存方針)、未検証URLの追加は行わなかった。ユーザーが実際に動作確認したURLを`config/rss_sources.csv`へ追加すればL8のmaterials_countが自動的に反映され始める
+
+## 12. データ達成度検証と材料取込パイプラインの修正(2026-07-08)
+
+P1〜P4実装後、実データをクエリして「どれだけ正しいデータを自動取得し指標化・
+判断できているか」を検証した(宣言ベースでなく実測値ベース)。主な発見:
+
+- 統計的検証(Step2)を通過した15件のindicator×target組み合わせは全てC/Dランク、
+  adopted=True は0件(先行指標として統計的に証明されたものは現時点で無い)
+- テーマスコアは10テーマ中6テーマのみ算出、confidence(データ被覆率、統計的正しさではない)
+  は最高でも55%
+- リスクエンジンは72評価(12銘柄×6カテゴリ)中65件(90%)がunavailable
+- `materials.db`は6件のみで`related_tickers`(材料→保有銘柄の紐付け)が
+  **全件0件** → policy_tailwind軸・regulation/dilution/customer_churnリスクが
+  構造的に機能停止していた
+
+この最後の点を調査したところ、`_edgar_hits_to_drafts`/`_edinet_docs_to_drafts`/
+`_rss_entries_to_drafts`のいずれも`related_tickers`を一切セットしておらず、
+`data/materials_manual/pending.csv`経由の手動入力でしか埋まらない設計だった
+(「データが溜まれば自動的に直る」ものではなく、コード側の欠落と判明)。
+
+**修正内容:**
+- `src/materials/material_id.py`: `TOKEN_TO_INSTRUMENT_KEY`(既存の
+  `_seed_company_aliases()`と同じ導出規則で`config.INSTRUMENTS`からトークン→keyを逆引き)
+  と`resolve_related_ticker()`を追加
+- `src/materials/ingest.py`の`ingest_draft()`: 既に計算済みの`company_tok`から
+  `resolve_related_ticker()`で銘柄keyを解決し`related_tickers`へ自動セット。
+  手動入力で既に`related_tickers`が設定されている場合は上書きしない(人間の判断優先)。
+  `_MANUAL_COMPANY_ALIASES`由来のトークン(TSMC/Micron等、追跡対象外企業)は
+  逆引きにヒットしないため誤って紐付けられることもない(捏造回避の原則を維持)
+- `src/main.py`: `run_step5()`を`--step all`に組み込み(実行順を
+  `1→2→3→5→8→10→12→7→6→4`に変更。Step8の政策軸・Step10のリスクより前に実行)
+- `.github/workflows/daily.yml`: `EDINET_API_KEY`(secrets)・`SEC_EDGAR_USER_AGENT`
+  (非機密、SEC Fair Accessポリシー用識別ヘッダ)を「Run all steps」に追加
+
+**実データでの検証結果**: `--step 5`実行後、`FANUC_MISC_20260707`等の新規材料で
+`related_tickers=['fanuc']`が正しくセットされ、無関係企業(EDGARノイズの
+`LiveOne, Inc.`等)は`related_tickers=[]`のまま(誤って紐付けない)ことを確認。
+
+**未解決のまま残る項目**(ユーザー対応が必要、コードでは解決不可):
+- `config/rss_sources.csv`が空(実在するフィードURLの調査・追加が必要)
+
+### FRED_API_KEY登録 + ISM製造業PMI系列の廃止判明・代替対応(同日追記)
+
+ユーザーがFRED_API_KEYを取得・登録(ローカル`.env`経由、GitHub Actions secretsにも登録)した
+ところ、`ISMMAN`(旧`ism_mfg_pmi`のFRED系列ID)が400エラーで取得不可と判明。ISM社の
+ライセンス条件変更によりFREDでのISM製造業PMI無料配信が終了していることを実際のAPI
+応答で確認した(旧系列ID`NAPM`も同様に400)。
+
+**対応**:
+- `src/main.py`起動時に`.env`(gitignore対象)を自動読み込みする`_load_dotenv()`を追加。
+  既存のOS環境変数/GitHub Actions secretsは上書きしない(`os.environ.setdefault`)。
+  APIキーをBashコマンドラインへ直接書かずに済むようにする目的も兼ねる
+- ISM製造業PMIの代替として、OECD Composite Leading Indicators由来の製造業景況感指数
+  (`BSCICP03USM665S`、スケール・調査主体がISM PMIとは異なる別指標)を採用。
+  **同一指標の代理ではなく別指標**であることを`key`名(`us_mfg_confidence_oecd`、
+  旧`ism_mfg_pmi`から変更)・`name_ja`・`note`欄全てで明示し、実態を偽装しない
+- `config/indicators.csv`更新 → `config/scenarios/generate.py`で`robotics_fa.yaml`等を再生成
+- 実データで確認: Step2統計検証(608観測)・Step9投資判断レポートの成立条件表示
+  いずれも実測値が入ることを確認(従来「❓観測不能」だった`durable_goods_orders`も
+  同時に解消。FRED_API_KEY自体は5系列中4系列で最初から機能していたため)
+
+**引き続き未解決**: `GitHub Actions`側の`FRED_API_KEY`・`EDINET_API_KEY`はローカル
+`.env`とは別にリポジトリのSecretsへも登録が必要(未登録だと自動実行では常にスキップされる、
+今回`FRED_API_KEY`のみユーザーが両方に登録済み)。
+
+### 本家ISM製造業PMIの無料自動取得を広く再調査 → 断念・手動更新方式へ切替(同日追記)
+
+ユーザーから「OECD代替指標で本当に見たいものが見えるのか」「本家を別経路で入手できないか」
+との指摘を受け、WebSearchで無料代替APIを広く再調査した。
+
+**候補調査**: DBnomics(`https://api.db.nomics.world/v22/`、APIキー不要)が
+`ISM/pmi/pm`という系列でISM製造業PMIを提供していることを発見。実際に取得し検証した結果、
+2020-05〜2025-08分は既知の実際のISM PMI推移(コロナ底値43.1→2021年ピーク63.7→
+2023年以降40台後半で推移)と完全に一致する本物のデータだった。**しかし2025-09分から
+突然一桁台(10〜11)に破綻**(ISM PMIは景気後退期でも30台までしか下がらない指標のため
+実体経済的にあり得ない)。最新データも2025-12分で止まっており7ヶ月遅延。→ FREDと同時期に
+ISM社からDBnomicsへのデータ提供も止まったとみられ、**「別の無料経路」に見えて根本原因
+(ISM社のライセンス制限)は同じ**と判明。信頼できないデータのため本番には一切組み込まず、
+検証用コード・データは全て削除した。
+
+**結論**: 無料で本家ISM PMIを自動的に取得し続ける手段は現時点で存在しない。
+
+**対応(ユーザー承認済み: 手動更新 + OECD自動取得の併用)**:
+- `config/ism_pmi_manual.csv`を新設。DBnomicsで検証済みの実データ(2020-05〜2025-08、
+  64ヶ月分)を事前投入し、それ以降はISM公式の無料プレスリリースから毎月ユーザーが
+  手入力する運用に切替(`data/materials_manual/pending.csv`と同じ「人間が公開情報を
+  転記する」パターンで法的にも問題ない)
+- `src/data_sources/ism_pmi_manual.py`: CSV→parquet変換 + 鮮度チェック
+  (`expected_latest_month()`がISMの公表サイクル(毎月第1営業日に前月分)から
+  本日時点で入手済みであるべき月を計算し、`staleness_note()`が遅延ヶ月数を返す)
+- `src/reporting/daily_report.py`に`_section_manual_data_freshness()`を追加。
+  更新が滞ると公開レポート(`outputs/daily_report.md`)に自動で警告が表示される
+  (忘れ防止アラート、保有銘柄を含まないデータパイプライン健全性の表示なので公開可)
+- `src/config.py`の`DataSource`enumに`MANUAL`を追加(既存の`verified/proxy/estimated/
+  unavailable`のいずれも「無料API経由の自動取得」を前提にした分類のため、手動転記だが
+  実数値そのものである、という性質を`source=manual, data_quality=verified`で表現)
+- `config/indicators.csv`: `ism_mfg_pmi`(本家、手動)と`us_mfg_confidence_oecd`
+  (OECD代替、自動)を**別指標として併存**させる(ユーザーの「両方併用」の指示通り)。
+  `config/scenarios/robotics_fa.yaml`を再生成し、robotics_faテーマのシナリオ条件が
+  4→5指標に増加
+
+**実データでの検証結果**: `--step 1`実行後、`ism_mfg_pmi`(995観測、ffill後)・
+`us_mfg_confidence_oecd`(608観測)の両方がStep2統計検証・投資判断レポートの成立条件
+表示に実測値付きで反映されることを確認。現時点で64ヶ月分のみのため、次回以降は
+ユーザーが毎月`config/ism_pmi_manual.csv`へ追記する運用が必要(鮮度警告が目印になる)。

@@ -53,6 +53,30 @@ def _seed_company_aliases() -> dict[str, str]:
 
 COMPANY_ALIASES: dict[str, str] = _seed_company_aliases()
 
+
+def _seed_token_to_instrument_key() -> dict[str, str]:
+    """企業別名トークン → config.INSTRUMENTS上のkey の逆引き。
+
+    _seed_company_aliases()と全く同じ導出規則(inst.keyの大文字化+英数字以外除去)を
+    使うことで、_normalize_company()が返すトークンから「追跡対象の銘柄か」を
+    判定できるようにする。_MANUAL_COMPANY_ALIASES由来のトークン(TSMC/MICRON等、
+    instruments.csvに存在しない企業)は含まれないため、未追跡企業をrelated_tickersへ
+    誤って紐付けることはない(捏造回避)。
+    """
+    mapping: dict[str, str] = {}
+    for inst in INSTRUMENTS:
+        token = re.sub(r"[^A-Z0-9]", "", inst.key.upper())[:_MAX_TOKEN_LEN] or "UNKNOWNCO"
+        mapping[token] = inst.key
+    return mapping
+
+
+TOKEN_TO_INSTRUMENT_KEY: dict[str, str] = _seed_token_to_instrument_key()
+
+
+def resolve_related_ticker(company_tok: str) -> str | None:
+    """_normalize_company()が返したトークンから追跡対象銘柄のkeyを引く(未知はNone)。"""
+    return TOKEN_TO_INSTRUMENT_KEY.get(company_tok)
+
 # タイトル/サマリー内キーワード → トピックトークン。定義順=優先順位(先勝ち)。
 TOPIC_KEYWORDS: dict[str, list[str]] = {
     "HBM_LTA": ["hbm long-term", "hbm lta", "hbm長期契約", "hbm 長期契約"],

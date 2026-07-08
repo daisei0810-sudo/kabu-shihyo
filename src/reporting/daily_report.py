@@ -319,6 +319,37 @@ def _section_scorecard(sc: pd.DataFrame) -> list[str]:
     return lines
 
 
+def _section_manual_data_freshness(csv_path: Path | None = None) -> list[str]:
+    """手動入力が必要な指標の更新遅延を可視化する(忘れ防止アラート)。
+
+    保有銘柄の判断を含まない、指標パイプラインの健全性そのものの表示なので公開レポートに置く。
+    """
+    lines: list[str] = ["## 手動更新指標の鮮度", ""]
+    try:
+        from src.data_sources.ism_pmi_manual import MANUAL_CSV_PATH, staleness_note
+
+        path = csv_path or MANUAL_CSV_PATH
+        if not path.exists():
+            lines += ["*config/ism_pmi_manual.csv 未作成*", ""]
+            return lines
+
+        df = pd.read_csv(path)
+        if df.empty:
+            lines += ["*データ行なし*", ""]
+            return lines
+
+        latest_month = pd.Period(df["month"].max(), freq="M").to_timestamp().date()
+        note, _is_stale = staleness_note(latest_month)
+        lines.append(f"- ISM製造業PMI(`config/ism_pmi_manual.csv`): {note}")
+    except Exception as exc:
+        logger.warning("manual data freshness check failed: %s", exc)
+        lines += ["*鮮度チェック失敗*", ""]
+        return lines
+
+    lines.append("")
+    return lines
+
+
 def _section_data_quality() -> list[str]:
     lines: list[str] = ["## データ品質", ""]
     lines.append("| バッジ | 品質 | 説明 | スコア算入 |")
@@ -390,6 +421,7 @@ def generate_daily_report() -> str:
     lines.extend(_section_macro(macro_df if macro_df is not None else pd.DataFrame()))
     lines.extend(_section_backtest_summary())
     lines.extend(_section_scorecard(sc_df if sc_df is not None else pd.DataFrame()))
+    lines.extend(_section_manual_data_freshness())
     lines.extend(_section_data_quality())
 
     lines += [

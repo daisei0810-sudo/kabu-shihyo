@@ -66,6 +66,7 @@ class DataSource(str, Enum):
     XRPL = "xrpl"            # 公開rippledノード / XRPScan
     DEFILLAMA = "defillama"
     FRED = "fred"
+    MANUAL = "manual"       # 無料API廃止等により自動取得不可のため人間が公開情報を転記
     NEWS = "news"           # イベント推定用(estimated)
     NONE = "none"           # unavailable
 

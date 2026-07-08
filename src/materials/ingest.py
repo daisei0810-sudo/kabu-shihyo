@@ -46,6 +46,7 @@ from src.materials.material_id import (
     _normalize_company,
     extract_company_alias,
     generate_material_id,
+    resolve_related_ticker,
 )
 from src.materials.models import Material, MaterialDraft, Source
 from src.materials.source_rank import assign_source_rank
@@ -194,6 +195,13 @@ def ingest_draft(conn: sqlite3.Connection, draft: MaterialDraft) -> Material | N
     topic_tok = _classify_topic(draft.title, draft.summary)
     bucket = dedup_bucket(company_tok, topic_tok, event_date)
 
+    # related_tickers自動紐付け: company_tokが追跡対象銘柄(config.INSTRUMENTS)由来の
+    # トークンであればそのkeyを採用する。手動入力(draft.related_tickersが既に設定
+    # されている場合)は上書きしない(人間の判断を優先)。未追跡企業はNoneのままとし、
+    # 誤った紐付けを作らない(theme_score.pyの政策軸・risk/detectors.pyが依存)。
+    auto_ticker = resolve_related_ticker(company_tok)
+    related_tickers = draft.related_tickers or ([auto_ticker] if auto_ticker else [])
+
     match = detect_duplicate_material(draft, bucket, existing)
     freshness = compute_freshness_score(draft.published_at, draft.detected_at)
     delayed = is_detection_delayed(draft.published_at, draft.detected_at)
@@ -238,7 +246,7 @@ def ingest_draft(conn: sqlite3.Connection, draft: MaterialDraft) -> Material | N
         source_rank=draft.source_rank.value,
         published_at=draft.published_at.isoformat() if draft.published_at else None,
         first_detected_at=now_iso,
-        related_tickers=draft.related_tickers,
+        related_tickers=related_tickers,
         affected_factors=draft.affected_factors,
         new_fact_flag=new_fact_flag,
         notification_status=(

@@ -279,6 +279,66 @@ class TestIngestDraft:
         assert m.notification_status == NotificationStatus.SUPPRESSED.value
 
 
+class TestRelatedTickersAutoLink:
+    """related_tickers自動紐付け(EDINET/EDGAR/RSS取込時にinstruments.csvの
+    keyを自動判定する)の回帰テスト。手動入力を上書きしないこと、追跡対象外の
+    企業を誤って紐付けないことの両方を確認する。"""
+
+    def test_edinet_filer_name_resolves_to_instrument_key(self, tmp_path: Path) -> None:
+        from src.materials.db import get_connection
+
+        conn = get_connection(tmp_path / "test.db")
+        draft = MaterialDraft(
+            title="臨時報告書",
+            summary="",
+            source_id="edinet",
+            source_rank=SourceRank.A,
+            published_at=datetime(2026, 7, 1, tzinfo=UTC),
+            detected_at=datetime(2026, 7, 1, 1, 0, tzinfo=UTC),
+            company_hint="株式会社フジクラ",
+        )
+        m = ingest_draft(conn, draft)
+        assert m is not None
+        assert m.related_tickers == ["fujikura"]
+
+    def test_untracked_company_is_not_fabricated(self, tmp_path: Path) -> None:
+        # LiveOne, Inc.はinstruments.csvに存在しないため、related_tickersは
+        # 空のままであるべき(追跡対象外企業を誤って紐付けない)。
+        from src.materials.db import get_connection
+
+        conn = get_connection(tmp_path / "test.db")
+        draft = MaterialDraft(
+            title="LiveOne, Inc. 10-K",
+            summary="matched_query=Tesla",
+            source_id="sec_edgar",
+            source_rank=SourceRank.A,
+            published_at=datetime(2026, 6, 29, tzinfo=UTC),
+            detected_at=datetime(2026, 6, 29, 1, 0, tzinfo=UTC),
+            company_hint="LiveOne, Inc.",
+        )
+        m = ingest_draft(conn, draft)
+        assert m is not None
+        assert m.related_tickers == []
+
+    def test_manual_related_tickers_are_not_overridden(self, tmp_path: Path) -> None:
+        from src.materials.db import get_connection
+
+        conn = get_connection(tmp_path / "test.db")
+        draft = MaterialDraft(
+            title="村田製作所と共同開発",
+            summary="",
+            source_id="manual",
+            source_rank=SourceRank.B,
+            published_at=datetime(2026, 7, 1, tzinfo=UTC),
+            detected_at=datetime(2026, 7, 1, 1, 0, tzinfo=UTC),
+            company_hint="フジクラ",
+            related_tickers=["murata"],  # 人間が明示指定(自動判定と食い違う想定)
+        )
+        m = ingest_draft(conn, draft)
+        assert m is not None
+        assert m.related_tickers == ["murata"]
+
+
 class TestRunIngest:
     def test_run_ingest_with_manual_only(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

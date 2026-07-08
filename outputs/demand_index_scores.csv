@@ -1,3 +1,3 @@
 ﻿label,score,confidence_pct,data_coverage_pct,change_1d,change_1w,change_1m,note
-real_demand_index,92.5,0.708,0.273,-0.2,,,AI/半導体の実需を無料データで近似。GPUクラウド価格・HBM価格等の一次指標は取得不可のためconfidenceは中程度に留まる。
-ai_bubble_score,89.2,0.663,0.455,-1.1,,,株価・金利・VIXから過熱度を近似。PER等バリュエーション指標・OpenAI評価額・ETF流入は取得不可のため未算入。
+real_demand_index,92.3,0.708,0.273,-0.2,,,AI/半導体の実需を無料データで近似。GPUクラウド価格・HBM価格等の一次指標は取得不可のためconfidenceは中程度に留まる。
+ai_bubble_score,89.4,0.663,0.455,0.2,,,株価・金利・VIXから過熱度を近似。PER等バリュエーション指標・OpenAI評価額・ETF流入は取得不可のため未算入。

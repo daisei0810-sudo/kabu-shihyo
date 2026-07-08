@@ -4,11 +4,17 @@
 環境変数 FRED_API_KEY にセットするか、.env ファイルに記述する。
 
 取得系列:
-  ISM_MFG_PMI  : ISM製造業PMI (ISMMAN)
-  INDPRO        : 鉱工業生産指数 (月次)
-  DGORDER       : 耐久財受注 (月次)
-  T10Y2Y        : 米国長短スプレッド (日次) - 景気先行サイン
-  FEDFUNDS      : FFレート (月次)
+  US_MFG_CONFIDENCE_OECD : 米国製造業景況感指数 (OECD, BSCICP03USM665S)
+  INDPRO                  : 鉱工業生産指数 (月次)
+  DGORDER                 : 耐久財受注 (月次)
+  T10Y2Y                  : 米国長短スプレッド (日次) - 景気先行サイン
+  FEDFUNDS                : FFレート (月次)
+
+注意: ISM製造業PMI(ISMMAN/NAPM)はISM社のライセンス条件変更によりFREDでの無料配信が
+終了しており取得不可(2026-07-08確認、いずれも400エラー)。ドメイン論理上最も
+教科書的な先行指標だったが代替不可のため、同じく製造業センチメントを表す
+OECD Composite Leading Indicators由来の景況感指数(スケール・調査主体が異なる別指標、
+ISM PMIそのものではない)で代替する。config/indicators.csvのnote欄にも明記。
 """
 
 from __future__ import annotations
@@ -27,7 +33,7 @@ FRED_API_BASE = "https://api.stlouisfed.org/fred/series/observations"
 
 # 取得系列: (series_id, key, 説明)
 FRED_SERIES: list[tuple[str, str, str]] = [
-    ("ISMMAN", "ism_mfg_pmi", "ISM製造業PMI (月次)"),
+    ("BSCICP03USM665S", "us_mfg_confidence_oecd", "米国製造業景況感指数(OECD、月次)"),
     ("INDPRO", "industrial_production", "鉱工業生産指数 (月次)"),
     ("DGORDER", "durable_goods_orders", "耐久財受注 (月次)"),
     ("T10Y2Y", "yield_spread_10y2y", "米国10年-2年スプレッド (日次)"),

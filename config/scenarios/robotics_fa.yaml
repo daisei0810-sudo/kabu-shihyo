@@ -24,6 +24,13 @@ scenarios:
       op: '>'
       threshold: 0.0
       weight: 1.0
+    - id: us_mfg_confidence_oecd_dz_bull
+      desc: us_mfg_confidence_oecd の勢い(21日変化率Zスコア)が>0.0
+      indicator: us_mfg_confidence_oecd
+      feature: dz
+      op: '>'
+      threshold: 0.0
+      weight: 1.0
     - id: durable_goods_orders_dz_bull
       desc: durable_goods_orders の勢い(21日変化率Zスコア)が>0.0
       indicator: durable_goods_orders
@@ -54,6 +61,13 @@ scenarios:
       op: abs_lt
       threshold: 0.5
       weight: 1.0
+    - id: us_mfg_confidence_oecd_dz_neutral
+      desc: us_mfg_confidence_oecd の勢い(21日変化率Zスコア)がabs_lt0.5
+      indicator: us_mfg_confidence_oecd
+      feature: dz
+      op: abs_lt
+      threshold: 0.5
+      weight: 1.0
     - id: durable_goods_orders_dz_neutral
       desc: durable_goods_orders の勢い(21日変化率Zスコア)がabs_lt0.5
       indicator: durable_goods_orders
@@ -80,6 +94,13 @@ scenarios:
     - id: ism_mfg_pmi_dz_bear
       desc: ism_mfg_pmi の勢い(21日変化率Zスコア)が<0.0
       indicator: ism_mfg_pmi
+      feature: dz
+      op: <
+      threshold: 0.0
+      weight: 1.0
+    - id: us_mfg_confidence_oecd_dz_bear
+      desc: us_mfg_confidence_oecd の勢い(21日変化率Zスコア)が<0.0
+      indicator: us_mfg_confidence_oecd
       feature: dz
       op: <
       threshold: 0.0

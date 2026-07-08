@@ -21,23 +21,49 @@
   EDINET_API_KEY         : EDINET(日本の開示システム)無料APIキー
                           (https://api.edinet-fsa.go.jp で登録。未設定時はEDINETスキップ。
                           動作確認済み — 保有の日本上場銘柄の材料取得に使用)
+
+上記はOSの環境変数として設定する他、リポジトリルートの `.env`(gitignore対象、
+KEY=VALUE形式)に書いても読み込まれる(`_load_dotenv()`参照)。GitHub Actions側は
+`.env`を使わずsecretsのみを使う(daily.yml参照)。
 """
 
 from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
 from src.data_sources.base import setup_logging
 from src.data_sources.coingecko import CoinGeckoFetcher
 from src.data_sources.defillama import DefiLlamaFetcher
 from src.data_sources.fred import FredFetcher
+from src.data_sources.ism_pmi_manual import IsmPmiManualLoader
 from src.data_sources.xrpl_fetcher import XrplFetcher
 from src.data_sources.yfinance_fetcher import YfinanceFetcher
 
 logger = logging.getLogger(__name__)
+
+
+def _load_dotenv(path: str = ".env") -> None:
+    """.env(リポジトリルート、gitignore対象)からKEY=VALUE行を読み、未設定の
+    環境変数のみ補完する。既にOS環境変数として設定済みの値やGitHub Actions
+    secretsは上書きしない(os.environ.setdefault)。ファイルが無ければ何もしない。
+    """
+    env_path = Path(path)
+    if not env_path.exists():
+        return
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv()
 
 
 def run_step1() -> int:
@@ -51,6 +77,7 @@ def run_step1() -> int:
         CoinGeckoFetcher(),
         DefiLlamaFetcher(),
         FredFetcher(),
+        IsmPmiManualLoader(),
         XrplFetcher(),
     ]
 
@@ -262,8 +289,11 @@ def run_step5() -> None:
 
     ニュース/IR/政府発表を取込み、重複検知・鮮度判定を経て data/materials.db
     (揮発キャッシュ) へ登録し、data/materials/*.jsonl(正本)へ書き戻す。
-    `--step all` にはまだ含めない: 日次自動実行(GitHub Actions)へ組み込む前に、
-    手動実行で実データに対する動作を確認すること。
+    material_id生成時にconfig.INSTRUMENTS由来のトークンならrelated_tickersへ
+    自動で紐付ける(material_id.pyのresolve_related_ticker、追跡対象外企業は
+    紐付けない=捏造回避)。EDINET動作確認・related_tickers紐付け確認が
+    取れたため `--step all` に含める(Step8のpolicy_tailwind軸・Step10の
+    regulation/dilution/customer_churnリスクより前に実行する必要がある)。
 
     EDINET(日本の開示システム)は動作確認済み。EDINET_API_KEY未設定時は
     自動的にスキップされる(クラッシュしない)。未取得の場合は
@@ -351,12 +381,12 @@ def main() -> None:
         "--step",
         choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "all"],
         default="1",
-        help="実行するステップ (default: 1)。5(材料取込)・9(意思決定エンジン)・"
-             "11(資金配分)は明示指定時のみ実行、allには未含有(5はPhase6動作確認中、"
-             "9・11は非公開出力のため日次自動実行はdaily.yml側でPRIVATE_REPO_PAT設定時"
-             "のみ個別に呼ぶ)。6(通知)・7(予測台帳)・8(テーマスコア)・10(リスク)・"
+        help="実行するステップ (default: 1)。9(意思決定エンジン)・11(資金配分)は"
+             "明示指定時のみ実行、allには未含有(非公開出力のため日次自動実行は"
+             "daily.yml側でPRIVATE_REPO_PAT設定時のみ個別に呼ぶ)。"
+             "5(材料取込)・6(通知)・7(予測台帳)・8(テーマスコア)・10(リスク)・"
              "12(新規発掘、保有銘柄を含まないため公開)はallに含む。"
-             "all の実行順は 1→2→3→8→10→12→7→6→4",
+             "all の実行順は 1→2→3→5→8→10→12→7→6→4",
     )
     args = parser.parse_args()
 
@@ -372,7 +402,7 @@ def main() -> None:
     if args.step in ("3", "all"):
         run_step3()
 
-    if args.step == "5":
+    if args.step in ("5", "all"):
         run_step5()
 
     if args.step in ("8", "all"):

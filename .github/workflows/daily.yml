@@ -54,6 +54,9 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+          EDINET_API_KEY: ${{ secrets.EDINET_API_KEY }}
+          # SEC Fair Accessポリシー用の識別ヘッダ。機密情報ではないためsecrets不要。
+          SEC_EDGAR_USER_AGENT: "kabu-shihyo-tool daisei0810-sudo@users.noreply.github.com"
 
       # Step9(意思決定エンジン)・Step11(資金配分)はprivateリポジトリでの永続化が
       # 確認できた場合のみ自動実行する。永続化が無い状態で毎日実行しても
