@@ -3,5 +3,5 @@ ai_datacenter,0,0,2,監視可能2カテゴリ中0カテゴリが悪化 → risk_
 crypto_xrp,0,0,0,監視可能0カテゴリ中0カテゴリが悪化 → risk_level0。閾値(2/3/4)はcollapse_watch(§11)と同じ導出方式。
 ev_physical_ai,0,0,0,監視可能0カテゴリ中0カテゴリが悪化 → risk_level0。閾値(2/3/4)はcollapse_watch(§11)と同じ導出方式。
 quantum,0,0,0,監視可能0カテゴリ中0カテゴリが悪化 → risk_level0。閾値(2/3/4)はcollapse_watch(§11)と同じ導出方式。
-robotics_fa,0,0,1,監視可能1カテゴリ中0カテゴリが悪化 → risk_level0。閾値(2/3/4)はcollapse_watch(§11)と同じ導出方式。
+robotics_fa,0,1,1,監視可能1カテゴリ中1カテゴリが悪化 → risk_level0。閾値(2/3/4)はcollapse_watch(§11)と同じ導出方式。
 semicap,0,0,0,監視可能0カテゴリ中0カテゴリが悪化 → risk_level0。閾値(2/3/4)はcollapse_watch(§11)と同じ導出方式。
