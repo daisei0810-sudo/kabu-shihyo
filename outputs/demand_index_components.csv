@@ -1,20 +1,20 @@
 ﻿label,component,score,weight,available,data_quality,note
 real_demand_index,ハイパースケーラーCAPEX,100.0,0.25,True,verified,YoY=+80%
 real_demand_index,NVIDIA CAPEX,100.0,0.1,True,verified,YoY=+43%
-real_demand_index,TSMC CAPEX,56.97281481957759,0.1,True,verified,YoY=+6%
-real_demand_index,SOX指数モメンタム,97.60765550239235,0.15,True,proxy,パーセンタイル(n=1254)
-real_demand_index,光通信バスケット(フジクラ/住友電工/古河電工/村田),95.98689598689599,0.15,True,proxy,パーセンタイル(n=1221) (構成銘柄4/4)
-real_demand_index,半導体装置バスケット(ローツェ/アドバンテスト/TOWA/KOKUSAI/芝浦),99.83619983619984,0.1,True,proxy,パーセンタイル(n=1221) (構成銘柄5/5)
+real_demand_index,TSMC CAPEX,100.0,0.1,True,verified,YoY=+67%
+real_demand_index,SOX指数モメンタム,96.49402390438247,0.15,True,proxy,パーセンタイル(n=1255)
+real_demand_index,光通信バスケット(フジクラ/住友電工/古河電工/村田),94.10801963993454,0.15,True,proxy,パーセンタイル(n=1222) (構成銘柄4/4)
+real_demand_index,半導体装置バスケット(ローツェ/アドバンテスト/TOWA/KOKUSAI/芝浦),97.54500818330605,0.1,True,proxy,パーセンタイル(n=1222) (構成銘柄5/5)
 real_demand_index,AI売上÷AI投資,,0.05,False,unavailable,分子(日次株価)と分母(四半期capex)の粒度不一致のため見送り
 real_demand_index,GPUクラウド価格,,0.1,False,unavailable,無料APIなし → 取得不可
 real_demand_index,HBM価格/ASP/リードタイム,,0.1,False,unavailable,無料APIなし → 取得不可
 real_demand_index,CoWoSリードタイム,,0.05,False,unavailable,無料APIなし → 取得不可
 real_demand_index,データセンター電力契約/受注残,,0.05,False,unavailable,無料APIなし → 取得不可
-ai_bubble_score,NVIDIA株価レンジ位置,98.48484848484848,0.2,True,verified,パーセンタイル(n=1254)
-ai_bubble_score,SOX指数レンジ位置,97.60765550239235,0.15,True,verified,パーセンタイル(n=1254)
-ai_bubble_score,米10年金利水準,92.82296650717703,0.15,True,verified,パーセンタイル(n=1254)
-ai_bubble_score,VIX逆数(低VIX=楽観過剰=バブル的),73.9,0.05,True,verified,逆数化: パーセンタイル(n=1255)
-ai_bubble_score,NVIDIA 3ヶ月モメンタム,71.3094945481595,0.1,True,verified,65日騰落率=+13%
+ai_bubble_score,NVIDIA株価レンジ位置,96.57370517928287,0.2,True,verified,パーセンタイル(n=1255)
+ai_bubble_score,SOX指数レンジ位置,96.49402390438247,0.15,True,verified,パーセンタイル(n=1255)
+ai_bubble_score,米10年金利水準,92.19123505976096,0.15,True,verified,パーセンタイル(n=1255)
+ai_bubble_score,VIX逆数(低VIX=楽観過剰=バブル的),42.7,0.05,True,verified,逆数化: パーセンタイル(n=1256)
+ai_bubble_score,NVIDIA 3ヶ月モメンタム,55.54371454645229,0.1,True,verified,65日騰落率=+3%
 ai_bubble_score,AI売上÷AI投資(逆数),,0.05,False,unavailable,実需指数と同様、粒度不一致のため見送り
 ai_bubble_score,PER/EV-EBITDA/PSR/FCF Yield,,0.1,False,unavailable,yfinance Ticker.infoが不安定 + Step3オフライン原則との整合のためPhase7では見送り(Step1側fetcher実装が前提)
 ai_bubble_score,OpenAI評価額/資金調達条件,,0.05,False,unavailable,非上場、無料時系列なし
