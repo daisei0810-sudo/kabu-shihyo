@@ -1,10 +1,10 @@
 ﻿indicator,target,direction,horizon_days,n_events,n_events_raw,low_n_flag,mean_return,median_return,hit_rate,max_dd,sharpe,t_stat,t_p,bs_ci_lo,bs_ci_hi,bs_ci_significant
-xrp_price,xrp,above,1,16,16,False,-0.0069,-0.0039,0.312,-0.3023,-2.202,-0.555,0.5872,-0.0307,0.0167,False
-xrp_price,xrp,above,7,16,16,False,0.0614,-0.0174,0.438,-0.4844,1.435,0.957,0.3538,-0.0426,0.1955,False
-xrp_price,xrp,above,30,10,16,False,0.1608,-0.0445,0.2,-0.5729,0.613,0.669,0.5206,-0.1188,0.656,False
-xrp_price,xrp,above,60,9,16,True,0.0806,-0.0226,0.444,-0.6951,0.311,0.455,0.6613,-0.1751,0.4565,False
-xrp_price,xrp,above,90,7,16,True,0.2379,-0.0541,0.429,-0.7066,0.403,0.637,0.5475,-0.2433,0.9998,False
-xrp_price,xrp,above,120,5,16,True,0.2487,0.1914,0.8,-0.1286,1.098,1.694,0.1654,-0.0028,0.5067,False
+xrp_price,xrp,above,1,17,17,False,-0.0073,-0.0063,0.294,-0.3126,-2.426,-0.63,0.5375,-0.0294,0.0147,False
+xrp_price,xrp,above,7,17,17,False,0.0578,-0.0139,0.471,-0.4844,1.393,0.957,0.3528,-0.0399,0.1839,False
+xrp_price,xrp,above,30,11,17,False,0.1409,-0.0515,0.182,-0.5977,0.564,0.645,0.5335,-0.1138,0.5919,False
+xrp_price,xrp,above,60,10,17,False,0.0606,-0.0712,0.4,-0.7317,0.246,0.379,0.7134,-0.1727,0.3994,False
+xrp_price,xrp,above,90,8,17,True,0.1475,-0.1593,0.375,-0.849,0.26,0.439,0.6736,-0.2968,0.8601,False
+xrp_price,xrp,above,120,6,17,True,0.1106,0.1087,0.667,-0.6339,0.358,0.605,0.5717,-0.2273,0.4211,False
 stablecoin_tvl,xrp,above,1,8,8,True,0.0052,0.0046,0.625,-0.0659,2.873,0.512,0.6245,-0.0124,0.0249,False
 stablecoin_tvl,xrp,above,7,8,8,True,-0.0218,-0.0429,0.375,-0.3052,-1.743,-0.822,0.4384,-0.0684,0.0287,False
 optical_module_demand,fujikura,above,1,27,27,False,0.0039,0.0063,0.593,-0.2403,1.882,0.616,0.5432,-0.0079,0.0162,False
@@ -58,7 +58,7 @@ ism_mfg_pmi,fanuc,above,1,11,11,False,0.004,0.0046,0.636,-0.0477,4.37,0.913,0.38
 ism_mfg_pmi,fanuc,above,7,11,11,False,-0.0012,-0.0069,0.455,-0.1269,-0.211,-0.117,0.9093,-0.0181,0.0209,False
 ism_mfg_pmi,fanuc,above,30,7,11,True,-0.0213,-0.0158,0.143,-0.1564,-1.975,-1.803,0.1215,-0.0437,-0.0017,False
 ism_mfg_pmi,fanuc,above,60,6,11,True,-0.0542,-0.0506,0.5,-0.3968,-0.96,-1.148,0.303,-0.1397,0.0266,False
-durable_goods_orders,fanuc,above,1,14,14,False,0.0019,0.0027,0.571,-0.0746,1.813,0.427,0.6762,-0.007,0.01,False
+durable_goods_orders,fanuc,above,1,14,14,False,0.0019,0.0027,0.571,-0.0746,1.813,0.427,0.6761,-0.007,0.01,False
 durable_goods_orders,fanuc,above,7,14,14,False,0.0245,0.0226,0.714,-0.0723,3.743,2.334,0.0363,0.005,0.0444,True
 durable_goods_orders,fanuc,above,30,8,14,True,0.0486,0.0189,0.625,-0.121,1.082,1.056,0.3262,-0.0198,0.143,False
 durable_goods_orders,fanuc,above,60,8,14,True,0.0615,0.0432,0.75,-0.2248,0.877,1.211,0.2653,-0.0302,0.1553,False
