@@ -83,7 +83,7 @@ durable_goods_orders,yaskawa,above,1,14,14,False,0.002,-0.0025,0.5,-0.1043,1.558
 durable_goods_orders,yaskawa,above,7,14,14,False,0.0281,0.0057,0.5,-0.1653,2.571,1.603,0.1329,-0.004,0.0616,False
 durable_goods_orders,yaskawa,above,30,8,14,True,0.0591,0.0276,0.75,-0.2617,0.874,0.852,0.4222,-0.0576,0.1953,False
 durable_goods_orders,yaskawa,above,60,8,14,True,0.1065,0.082,0.625,-0.2421,0.91,1.255,0.2497,-0.0278,0.2805,False
-durable_goods_orders,yaskawa,above,90,7,14,True,0.0233,0.0163,0.571,-0.396,0.203,0.321,0.7588,-0.1057,0.1557,False
+durable_goods_orders,yaskawa,above,90,7,14,True,0.0233,0.0163,0.571,-0.3959,0.203,0.321,0.7588,-0.1057,0.1557,False
 durable_goods_orders,yaskawa,above,120,6,14,True,0.1173,0.1509,0.5,-0.4302,0.519,0.878,0.4203,-0.1226,0.3489,False
 us10y_yield,tesla,above,1,15,15,False,-0.0079,-0.0122,0.333,-0.2787,-3.037,-0.741,0.471,-0.0276,0.0132,False
 us10y_yield,tesla,above,7,14,15,False,-0.0329,-0.0614,0.357,-0.6113,-1.872,-1.167,0.264,-0.084,0.0223,False
