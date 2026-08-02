@@ -1,4 +1,4 @@
-const CACHE = 'kabu-202608012254';
+const CACHE = 'kabu-202608022255';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {

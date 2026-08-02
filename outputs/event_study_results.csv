@@ -58,7 +58,7 @@ ism_mfg_pmi,fanuc,above,1,11,11,False,0.004,0.0046,0.636,-0.0477,4.37,0.913,0.38
 ism_mfg_pmi,fanuc,above,7,11,11,False,-0.0012,-0.0069,0.455,-0.1269,-0.211,-0.117,0.9093,-0.0181,0.0209,False
 ism_mfg_pmi,fanuc,above,30,7,11,True,-0.0213,-0.0158,0.143,-0.1564,-1.975,-1.803,0.1215,-0.0437,-0.0017,False
 ism_mfg_pmi,fanuc,above,60,6,11,True,-0.0542,-0.0506,0.5,-0.3968,-0.96,-1.148,0.303,-0.1397,0.0266,False
-durable_goods_orders,fanuc,above,1,14,14,False,0.0019,0.0027,0.571,-0.0746,1.813,0.427,0.6761,-0.007,0.01,False
+durable_goods_orders,fanuc,above,1,14,14,False,0.0019,0.0027,0.571,-0.0746,1.813,0.427,0.6762,-0.007,0.01,False
 durable_goods_orders,fanuc,above,7,14,14,False,0.0245,0.0226,0.714,-0.0723,3.743,2.334,0.0363,0.005,0.0444,True
 durable_goods_orders,fanuc,above,30,8,14,True,0.0486,0.0189,0.625,-0.121,1.082,1.056,0.3262,-0.0198,0.143,False
 durable_goods_orders,fanuc,above,60,8,14,True,0.0615,0.0432,0.75,-0.2248,0.877,1.211,0.2653,-0.0302,0.1553,False
@@ -81,9 +81,9 @@ ism_mfg_pmi,yaskawa,above,30,7,11,True,-0.0319,-0.0237,0.286,-0.225,-2.258,-2.06
 ism_mfg_pmi,yaskawa,above,60,6,11,True,-0.0857,-0.0509,0.167,-0.5049,-1.194,-1.427,0.2129,-0.2,0.0118,False
 durable_goods_orders,yaskawa,above,1,14,14,False,0.002,-0.0025,0.5,-0.1043,1.558,0.367,0.7193,-0.0084,0.0125,False
 durable_goods_orders,yaskawa,above,7,14,14,False,0.0281,0.0057,0.5,-0.1653,2.571,1.603,0.1329,-0.004,0.0616,False
-durable_goods_orders,yaskawa,above,30,8,14,True,0.0591,0.0276,0.75,-0.2617,0.874,0.852,0.4222,-0.0576,0.1953,False
+durable_goods_orders,yaskawa,above,30,8,14,True,0.0591,0.0276,0.75,-0.2617,0.873,0.852,0.4222,-0.0576,0.1953,False
 durable_goods_orders,yaskawa,above,60,8,14,True,0.1065,0.082,0.625,-0.2421,0.91,1.255,0.2497,-0.0278,0.2805,False
-durable_goods_orders,yaskawa,above,90,7,14,True,0.0233,0.0163,0.571,-0.3959,0.203,0.321,0.7588,-0.1057,0.1557,False
+durable_goods_orders,yaskawa,above,90,7,14,True,0.0233,0.0163,0.571,-0.396,0.203,0.321,0.7588,-0.1057,0.1557,False
 durable_goods_orders,yaskawa,above,120,6,14,True,0.1173,0.1509,0.5,-0.4302,0.519,0.878,0.4203,-0.1226,0.3489,False
 us10y_yield,tesla,above,1,15,15,False,-0.0079,-0.0122,0.333,-0.2787,-3.037,-0.741,0.471,-0.0276,0.0132,False
 us10y_yield,tesla,above,7,14,15,False,-0.0329,-0.0614,0.357,-0.6113,-1.872,-1.167,0.264,-0.084,0.0223,False
