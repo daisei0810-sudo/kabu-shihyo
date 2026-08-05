@@ -1,11 +1,11 @@
 ﻿theme,name_ja,as_of,structural_change,supply_demand,earnings,valuation,fund_flow,policy_tailwind,total,confidence_pct,data_coverage_pct,change_1d,change_1w,change_1m,note
-crypto_xrp,暗号資産 / XRP・XRPL,2026-08-04,,61.7,,,9.3,,46.7,0.35,0.167,,,,
-ai_datacenter,AIデータセンター / 光通信,2026-08-04,,92.5,91.0,,84.7,60.0,88.0,0.6,0.333,,,,
-semicap,半導体装置 / HBM / CoWoS / WFE,2026-08-04,,92.8,100.0,,86.6,,94.3,0.55,0.333,,,,
-robotics_fa,ロボティクス / FA / 減速機 / サーボ,2026-08-04,,95.0,,,93.6,,94.6,0.35,0.167,,,,
-ev_physical_ai,EV / Physical AI / Tesla / Optimus,2026-08-04,,,,,0.9,,0.9,0.1,0.167,,,,
-quantum,量子コンピュータ,2026-08-04,,90.4,,,,,90.4,0.25,0.0,,,,
-china_ai,中国AI・Physical AI,2026-08-04,,,,,,,,0.0,0.0,,,,china_ai: 利用可能データなし
-policy,政策・補助金・輸出規制・IPO,2026-08-04,,,,,,,,0.0,0.0,,,,policy: 利用可能データなし
-power,電力(Utility CAPEX / Grid / Nuclear / SMR),2026-08-04,,,,,,,,0.0,0.0,,,,power: 利用可能データなし
-bio,バイオ,2026-08-04,,,,,,,,0.0,0.0,,,,bio: 利用可能データなし
+crypto_xrp,暗号資産 / XRP・XRPL,2026-08-05,,61.2,,,12.1,,47.2,0.35,0.167,,,,
+ai_datacenter,AIデータセンター / 光通信,2026-08-05,,92.8,91.0,,83.9,60.0,88.0,0.6,0.333,,,,
+semicap,半導体装置 / HBM / CoWoS / WFE,2026-08-05,,93.3,100.0,,80.5,,93.4,0.55,0.333,,,,
+robotics_fa,ロボティクス / FA / 減速機 / サーボ,2026-08-05,,95.9,,,93.9,,95.3,0.35,0.167,,,,
+ev_physical_ai,EV / Physical AI / Tesla / Optimus,2026-08-05,,,,,0.2,,0.2,0.1,0.167,,,,
+quantum,量子コンピュータ,2026-08-05,,86.4,,,,,86.4,0.25,0.0,,,,
+china_ai,中国AI・Physical AI,2026-08-05,,,,,,,,0.0,0.0,,,,china_ai: 利用可能データなし
+policy,政策・補助金・輸出規制・IPO,2026-08-05,,,,,,,,0.0,0.0,,,,policy: 利用可能データなし
+power,電力(Utility CAPEX / Grid / Nuclear / SMR),2026-08-05,,,,,,,,0.0,0.0,,,,power: 利用可能データなし
+bio,バイオ,2026-08-05,,,,,,,,0.0,0.0,,,,bio: 利用可能データなし
