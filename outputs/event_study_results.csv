@@ -1,10 +1,10 @@
 ﻿indicator,target,direction,horizon_days,n_events,n_events_raw,low_n_flag,mean_return,median_return,hit_rate,max_dd,sharpe,t_stat,t_p,bs_ci_lo,bs_ci_hi,bs_ci_significant
-xrp_price,xrp,above,1,17,17,False,-0.0092,-0.0063,0.294,-0.3349,-2.989,-0.776,0.4488,-0.0313,0.0134,False
-xrp_price,xrp,above,7,17,17,False,0.0556,-0.0209,0.412,-0.5031,1.337,0.919,0.3717,-0.0424,0.1824,False
-xrp_price,xrp,above,30,11,17,False,0.139,-0.0515,0.182,-0.6065,0.556,0.636,0.5392,-0.1156,0.5899,False
-xrp_price,xrp,above,60,10,17,False,0.0595,-0.0768,0.4,-0.735,0.241,0.372,0.7186,-0.1739,0.3983,False
-xrp_price,xrp,above,90,8,17,True,0.1569,-0.1593,0.375,-0.8269,0.279,0.471,0.6521,-0.2786,0.8605,False
-xrp_price,xrp,above,120,6,17,True,0.1172,0.1087,0.667,-0.5993,0.39,0.659,0.5391,-0.2075,0.4211,False
+xrp_price,xrp,above,1,17,17,False,-0.007,-0.0063,0.294,-0.3084,-2.308,-0.6,0.5572,-0.0291,0.015,False
+xrp_price,xrp,above,7,17,17,False,0.056,-0.0209,0.412,-0.4996,1.348,0.926,0.3681,-0.0417,0.1826,False
+xrp_price,xrp,above,30,11,17,False,0.1316,-0.0515,0.182,-0.6414,0.524,0.6,0.5621,-0.1259,0.5846,False
+xrp_price,xrp,above,60,10,17,False,0.0595,-0.0766,0.4,-0.7349,0.241,0.372,0.7184,-0.1738,0.3983,False
+xrp_price,xrp,above,90,8,17,True,0.1533,-0.1593,0.375,-0.8353,0.271,0.459,0.6602,-0.2848,0.8605,False
+xrp_price,xrp,above,120,6,17,True,0.1166,0.1087,0.667,-0.6024,0.387,0.654,0.5421,-0.2093,0.4211,False
 stablecoin_tvl,xrp,above,1,8,8,True,0.0052,0.0046,0.625,-0.0659,2.873,0.512,0.6245,-0.0124,0.0249,False
 stablecoin_tvl,xrp,above,7,8,8,True,-0.0218,-0.0429,0.375,-0.3052,-1.743,-0.822,0.4384,-0.0684,0.0287,False
 optical_module_demand,fujikura,above,1,27,27,False,0.005,0.0063,0.593,-0.2403,2.325,0.761,0.4535,-0.0073,0.0176,False
@@ -58,7 +58,7 @@ ism_mfg_pmi,fanuc,above,1,11,11,False,0.004,0.0046,0.636,-0.0477,4.37,0.913,0.38
 ism_mfg_pmi,fanuc,above,7,11,11,False,-0.0012,-0.0069,0.455,-0.1269,-0.211,-0.117,0.9093,-0.0181,0.0209,False
 ism_mfg_pmi,fanuc,above,30,7,11,True,-0.0213,-0.0158,0.143,-0.1564,-1.975,-1.803,0.1215,-0.0437,-0.0017,False
 ism_mfg_pmi,fanuc,above,60,6,11,True,-0.0542,-0.0506,0.5,-0.3968,-0.96,-1.148,0.303,-0.1397,0.0266,False
-durable_goods_orders,fanuc,above,1,14,14,False,0.0019,0.0027,0.571,-0.0746,1.813,0.427,0.6761,-0.007,0.01,False
+durable_goods_orders,fanuc,above,1,14,14,False,0.0019,0.0027,0.571,-0.0746,1.813,0.427,0.6762,-0.007,0.01,False
 durable_goods_orders,fanuc,above,7,14,14,False,0.0245,0.0226,0.714,-0.0723,3.743,2.334,0.0363,0.005,0.0444,True
 durable_goods_orders,fanuc,above,30,8,14,True,0.0486,0.0189,0.625,-0.121,1.082,1.056,0.3262,-0.0198,0.143,False
 durable_goods_orders,fanuc,above,60,8,14,True,0.0615,0.0432,0.75,-0.2248,0.877,1.211,0.2653,-0.0302,0.1553,False
@@ -81,7 +81,7 @@ ism_mfg_pmi,yaskawa,above,30,7,11,True,-0.0319,-0.0237,0.286,-0.225,-2.258,-2.06
 ism_mfg_pmi,yaskawa,above,60,6,11,True,-0.0857,-0.0509,0.167,-0.5049,-1.194,-1.427,0.2129,-0.2,0.0118,False
 durable_goods_orders,yaskawa,above,1,14,14,False,0.002,-0.0025,0.5,-0.1043,1.558,0.367,0.7193,-0.0084,0.0125,False
 durable_goods_orders,yaskawa,above,7,14,14,False,0.0281,0.0057,0.5,-0.1653,2.571,1.603,0.1329,-0.004,0.0616,False
-durable_goods_orders,yaskawa,above,30,8,14,True,0.0591,0.0276,0.75,-0.2617,0.874,0.852,0.4222,-0.0576,0.1953,False
+durable_goods_orders,yaskawa,above,30,8,14,True,0.0591,0.0276,0.75,-0.2617,0.873,0.852,0.4222,-0.0576,0.1953,False
 durable_goods_orders,yaskawa,above,60,8,14,True,0.1065,0.082,0.625,-0.2421,0.91,1.255,0.2497,-0.0278,0.2805,False
 durable_goods_orders,yaskawa,above,90,7,14,True,0.0233,0.0163,0.571,-0.3959,0.203,0.321,0.7588,-0.1057,0.1557,False
 durable_goods_orders,yaskawa,above,120,6,14,True,0.1173,0.1509,0.5,-0.4302,0.519,0.878,0.4203,-0.1226,0.3489,False
