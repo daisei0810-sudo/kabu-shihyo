@@ -2,19 +2,19 @@
 real_demand_index,ハイパースケーラーCAPEX,82.00711646986832,0.25,True,verified,YoY=+26%
 real_demand_index,NVIDIA CAPEX,100.0,0.1,True,verified,YoY=+43%
 real_demand_index,TSMC CAPEX,100.0,0.1,True,verified,YoY=+66%
-real_demand_index,SOX指数モメンタム,95.603517186251,0.15,True,proxy,パーセンタイル(n=1251)
-real_demand_index,光通信バスケット(フジクラ/住友電工/古河電工/村田),95.5810147299509,0.15,True,proxy,パーセンタイル(n=1222) (構成銘柄4/4)
-real_demand_index,半導体装置バスケット(ローツェ/アドバンテスト/TOWA/KOKUSAI/芝浦),95.8265139116203,0.1,True,proxy,パーセンタイル(n=1222) (構成銘柄5/5)
+real_demand_index,SOX指数モメンタム,95.2191235059761,0.15,True,proxy,パーセンタイル(n=1255)
+real_demand_index,光通信バスケット(フジクラ/住友電工/古河電工/村田),95.09403107113656,0.15,True,proxy,パーセンタイル(n=1223) (構成銘柄4/4)
+real_demand_index,半導体装置バスケット(ローツェ/アドバンテスト/TOWA/KOKUSAI/芝浦),95.82992641046607,0.1,True,proxy,パーセンタイル(n=1223) (構成銘柄5/5)
 real_demand_index,AI売上÷AI投資,,0.05,False,unavailable,分子(日次株価)と分母(四半期capex)の粒度不一致のため見送り
 real_demand_index,GPUクラウド価格,,0.1,False,unavailable,無料APIなし → 取得不可
 real_demand_index,HBM価格/ASP/リードタイム,,0.1,False,unavailable,無料APIなし → 取得不可
 real_demand_index,CoWoSリードタイム,,0.05,False,unavailable,無料APIなし → 取得不可
 real_demand_index,データセンター電力契約/受注残,,0.05,False,unavailable,無料APIなし → 取得不可
-ai_bubble_score,NVIDIA株価レンジ位置,98.1658692185008,0.2,True,verified,パーセンタイル(n=1254)
-ai_bubble_score,SOX指数レンジ位置,95.603517186251,0.15,True,verified,パーセンタイル(n=1251)
-ai_bubble_score,米10年金利水準,97.7671451355662,0.15,True,verified,パーセンタイル(n=1254)
-ai_bubble_score,VIX逆数(低VIX=楽観過剰=バブル的),69.6,0.05,True,verified,逆数化: パーセンタイル(n=1252)
-ai_bubble_score,NVIDIA 3ヶ月モメンタム,46.08876829980268,0.1,True,verified,65日騰落率=-2%
+ai_bubble_score,NVIDIA株価レンジ位置,97.84860557768924,0.2,True,verified,パーセンタイル(n=1255)
+ai_bubble_score,SOX指数レンジ位置,95.2191235059761,0.15,True,verified,パーセンタイル(n=1255)
+ai_bubble_score,米10年金利水準,98.48605577689243,0.15,True,verified,パーセンタイル(n=1255)
+ai_bubble_score,VIX逆数(低VIX=楽観過剰=バブル的),77.4,0.05,True,verified,逆数化: パーセンタイル(n=1256)
+ai_bubble_score,NVIDIA 3ヶ月モメンタム,45.73928037353106,0.1,True,verified,65日騰落率=-3%
 ai_bubble_score,AI売上÷AI投資(逆数),,0.05,False,unavailable,実需指数と同様、粒度不一致のため見送り
 ai_bubble_score,PER/EV-EBITDA/PSR/FCF Yield,,0.1,False,unavailable,yfinance Ticker.infoが不安定 + Step3オフライン原則との整合のためPhase7では見送り(Step1側fetcher実装が前提)
 ai_bubble_score,OpenAI評価額/資金調達条件,,0.05,False,unavailable,非上場、無料時系列なし
