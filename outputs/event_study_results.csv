@@ -1,10 +1,11 @@
 ﻿indicator,target,direction,horizon_days,n_events,n_events_raw,low_n_flag,mean_return,median_return,hit_rate,max_dd,sharpe,t_stat,t_p,bs_ci_lo,bs_ci_hi,bs_ci_significant
-xrp_price,xrp,above,1,18,18,False,0.0004,-0.0039,0.333,-0.3084,0.106,0.028,0.9777,-0.024,0.0267,False
+xrp_price,xrp,above,1,18,18,False,0.0015,-0.0039,0.333,-0.3084,0.414,0.111,0.9132,-0.0237,0.0295,False
 xrp_price,xrp,above,7,17,18,False,0.056,-0.0209,0.412,-0.4996,1.348,0.926,0.3681,-0.0417,0.184,False
 xrp_price,xrp,above,30,11,18,False,0.1316,-0.0515,0.182,-0.6414,0.524,0.6,0.5621,-0.1256,0.5842,False
 xrp_price,xrp,above,60,10,18,False,0.0595,-0.0766,0.4,-0.7349,0.241,0.372,0.7184,-0.1735,0.3995,False
 xrp_price,xrp,above,90,8,18,True,0.1533,-0.1593,0.375,-0.8353,0.271,0.459,0.6602,-0.284,0.8601,False
 xrp_price,xrp,above,120,7,18,True,0.054,0.0259,0.571,-0.7305,0.181,0.331,0.7523,-0.2427,0.3495,False
+amm_tvl,xrp,above,1,5,5,True,-0.0043,0.0079,0.6,-0.0868,-1.718,-0.242,0.8207,-0.0373,0.0247,False
 stablecoin_tvl,xrp,above,1,8,8,True,0.0052,0.0046,0.625,-0.0659,2.873,0.512,0.6245,-0.0124,0.0249,False
 stablecoin_tvl,xrp,above,7,8,8,True,-0.0218,-0.0429,0.375,-0.3052,-1.743,-0.822,0.4384,-0.0684,0.0287,False
 optical_module_demand,fujikura,above,1,28,28,False,0.0103,0.0066,0.607,-0.2403,3.692,1.231,0.229,-0.0054,0.0277,False
@@ -45,7 +46,7 @@ ism_mfg_pmi,harmonic,above,30,7,11,True,-0.028,-0.0863,0.143,-0.3659,-0.659,-0.6
 ism_mfg_pmi,harmonic,above,60,6,11,True,-0.004,-0.0495,0.5,-0.5401,-0.026,-0.031,0.9767,-0.2018,0.2533,False
 robotics_peer_basket,fanuc,above,1,25,25,False,0.0006,-0.0013,0.4,-0.1198,0.695,0.219,0.8286,-0.0049,0.0064,False
 robotics_peer_basket,fanuc,above,7,25,25,False,0.001,-0.0011,0.48,-0.3462,0.135,0.112,0.9117,-0.0156,0.0182,False
-robotics_peer_basket,fanuc,above,30,16,25,False,-0.0006,-0.0008,0.5,-0.3531,-0.025,-0.034,0.9733,-0.0328,0.0303,False
+robotics_peer_basket,fanuc,above,30,16,25,False,-0.0006,-0.0008,0.5,-0.3532,-0.025,-0.034,0.9733,-0.0328,0.0303,False
 robotics_peer_basket,fanuc,above,60,12,25,False,0.0414,0.0244,0.583,-0.3465,0.549,0.929,0.373,-0.0359,0.1307,False
 robotics_peer_basket,fanuc,above,90,10,25,False,0.038,0.0355,0.6,-0.4141,0.347,0.656,0.5285,-0.0624,0.1509,False
 robotics_peer_basket,fanuc,above,120,8,25,True,0.0576,0.0434,0.5,-0.3153,0.476,0.929,0.384,-0.0529,0.1715,False
@@ -83,7 +84,7 @@ durable_goods_orders,yaskawa,above,1,14,14,False,0.002,-0.0025,0.5,-0.1043,1.558
 durable_goods_orders,yaskawa,above,7,14,14,False,0.0281,0.0057,0.5,-0.1653,2.571,1.603,0.1329,-0.004,0.0616,False
 durable_goods_orders,yaskawa,above,30,8,14,True,0.0591,0.0276,0.75,-0.2617,0.874,0.852,0.4222,-0.0576,0.1953,False
 durable_goods_orders,yaskawa,above,60,8,14,True,0.1065,0.082,0.625,-0.2421,0.91,1.255,0.2497,-0.0278,0.2805,False
-durable_goods_orders,yaskawa,above,90,8,14,True,0.0539,0.0521,0.625,-0.3959,0.456,0.771,0.4659,-0.0736,0.18,False
+durable_goods_orders,yaskawa,above,90,8,14,True,0.0539,0.0521,0.625,-0.396,0.456,0.771,0.4659,-0.0736,0.18,False
 durable_goods_orders,yaskawa,above,120,6,14,True,0.1173,0.1509,0.5,-0.4302,0.519,0.878,0.4203,-0.1226,0.3513,False
 us10y_yield,tesla,above,1,15,15,False,-0.0079,-0.0122,0.333,-0.2787,-3.037,-0.741,0.471,-0.0276,0.0132,False
 us10y_yield,tesla,above,7,15,15,False,-0.0277,-0.0471,0.4,-0.6113,-1.602,-1.034,0.3188,-0.0774,0.0239,False
