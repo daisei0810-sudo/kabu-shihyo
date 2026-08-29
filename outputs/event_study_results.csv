@@ -1,11 +1,12 @@
 ﻿indicator,target,direction,horizon_days,n_events,n_events_raw,low_n_flag,mean_return,median_return,hit_rate,max_dd,sharpe,t_stat,t_p,bs_ci_lo,bs_ci_hi,bs_ci_significant
 xrp_price,xrp,above,1,18,18,False,0.0015,-0.0039,0.333,-0.3084,0.414,0.111,0.9132,-0.0237,0.0295,False
-xrp_price,xrp,above,7,18,18,False,0.0596,-0.0174,0.444,-0.4996,1.476,1.044,0.3112,-0.0332,0.182,False
+xrp_price,xrp,above,7,18,18,False,0.061,-0.0174,0.444,-0.4996,1.507,1.066,0.3015,-0.0323,0.1832,False
 xrp_price,xrp,above,30,11,18,False,0.1316,-0.0515,0.182,-0.6414,0.524,0.6,0.5621,-0.1245,0.5836,False
 xrp_price,xrp,above,60,10,18,False,0.0595,-0.0766,0.4,-0.7349,0.241,0.372,0.7184,-0.1719,0.3974,False
 xrp_price,xrp,above,90,8,18,True,0.1533,-0.1593,0.375,-0.8353,0.271,0.459,0.6602,-0.2839,0.8517,False
 xrp_price,xrp,above,120,7,18,True,0.054,0.0259,0.571,-0.7305,0.181,0.331,0.7523,-0.2427,0.3479,False
 amm_tvl,xrp,above,1,5,5,True,-0.0045,0.0068,0.6,-0.0868,-1.808,-0.255,0.8115,-0.0373,0.0243,False
+amm_tvl,xrp,above,7,5,5,True,0.0016,-0.0486,0.2,-0.2263,0.066,0.025,0.9815,-0.0899,0.1322,False
 stablecoin_tvl,xrp,above,1,8,8,True,0.0052,0.0046,0.625,-0.0659,2.873,0.512,0.6245,-0.0124,0.0249,False
 stablecoin_tvl,xrp,above,7,8,8,True,-0.0218,-0.0429,0.375,-0.3052,-1.743,-0.822,0.4384,-0.0684,0.0287,False
 optical_module_demand,fujikura,above,1,31,31,False,0.0135,0.0072,0.645,-0.2403,4.891,1.716,0.0966,-0.0008,0.0293,False
@@ -14,7 +15,7 @@ optical_module_demand,fujikura,above,30,18,31,False,0.1316,0.1354,0.722,-0.4753,
 optical_module_demand,fujikura,above,60,16,31,False,0.3757,0.2249,0.812,-0.257,1.795,3.503,0.0032,0.1806,0.5897,True
 optical_module_demand,fujikura,above,90,12,31,False,0.4823,0.4624,0.75,-0.3801,1.507,3.12,0.0098,0.2055,0.7822,True
 optical_module_demand,fujikura,above,120,9,31,True,0.8046,0.6437,0.889,-0.1576,1.352,2.8,0.0232,0.3343,1.3639,True
-optical_module_demand,murata,above,1,28,28,False,0.004,-0.0003,0.5,-0.214,1.968,0.656,0.5173,-0.0067,0.0158,False
+optical_module_demand,murata,above,1,28,28,False,0.004,-0.0003,0.5,-0.214,1.969,0.656,0.5173,-0.0067,0.0158,False
 optical_module_demand,murata,above,7,28,28,False,-0.0057,0.0003,0.5,-0.5145,-0.594,-0.524,0.6045,-0.0273,0.0151,False
 optical_module_demand,murata,above,30,17,28,False,0.0649,0.0095,0.529,-0.4992,0.629,0.894,0.3843,-0.0363,0.2195,False
 optical_module_demand,murata,above,60,14,28,False,0.1589,-0.0163,0.429,-0.4789,0.881,1.608,0.1318,-0.0128,0.3596,False
@@ -84,7 +85,7 @@ durable_goods_orders,yaskawa,above,1,14,14,False,0.002,-0.0025,0.5,-0.1043,1.558
 durable_goods_orders,yaskawa,above,7,14,14,False,0.0281,0.0057,0.5,-0.1653,2.571,1.603,0.1329,-0.004,0.0616,False
 durable_goods_orders,yaskawa,above,30,8,14,True,0.0591,0.0276,0.75,-0.2617,0.874,0.852,0.4222,-0.0576,0.1953,False
 durable_goods_orders,yaskawa,above,60,8,14,True,0.1065,0.082,0.625,-0.2421,0.91,1.255,0.2497,-0.0278,0.2805,False
-durable_goods_orders,yaskawa,above,90,8,14,True,0.0539,0.0521,0.625,-0.3959,0.456,0.771,0.4659,-0.0736,0.18,False
+durable_goods_orders,yaskawa,above,90,8,14,True,0.0539,0.0521,0.625,-0.396,0.456,0.771,0.4659,-0.0736,0.18,False
 durable_goods_orders,yaskawa,above,120,6,14,True,0.1173,0.1509,0.5,-0.4302,0.519,0.878,0.4203,-0.1226,0.3513,False
 us10y_yield,tesla,above,1,15,15,False,-0.0079,-0.0122,0.333,-0.2787,-3.037,-0.741,0.471,-0.0276,0.0132,False
 us10y_yield,tesla,above,7,15,15,False,-0.0277,-0.0471,0.4,-0.6113,-1.602,-1.034,0.3188,-0.0774,0.0239,False
@@ -93,7 +94,7 @@ us10y_yield,tesla,above,60,7,15,True,-0.0841,-0.0626,0.429,-0.7923,-0.483,-0.624
 us10y_yield,tesla,above,90,7,15,True,-0.1269,-0.2173,0.143,-0.7924,-0.773,-1.222,0.2676,-0.2696,0.088,False
 quantum_peer_basket,quantinuum,above,1,21,21,False,0.001,-0.0036,0.476,-0.1057,1.165,0.336,0.7401,-0.0046,0.0068,False
 quantum_peer_basket,quantinuum,above,7,21,21,False,-0.0049,-0.003,0.429,-0.246,-0.967,-0.739,0.4687,-0.0184,0.0074,False
-quantum_peer_basket,quantinuum,above,30,10,21,False,0.004,0.031,0.7,-0.2528,0.168,0.183,0.8587,-0.0381,0.0419,False
+quantum_peer_basket,quantinuum,above,30,10,21,False,0.004,0.031,0.7,-0.2528,0.168,0.183,0.8588,-0.0381,0.0419,False
 quantum_peer_basket,quantinuum,above,60,8,21,True,0.0083,-0.0224,0.375,-0.1769,0.257,0.355,0.7328,-0.0324,0.0536,False
 quantum_peer_basket,quantinuum,above,90,6,21,True,-0.0067,-0.0167,0.167,-0.1336,-0.198,-0.29,0.7832,-0.0411,0.0398,False
 quantum_peer_basket,quantinuum,above,120,5,21,True,0.0203,-0.0066,0.4,-0.1166,0.286,0.442,0.6816,-0.0468,0.112,False
