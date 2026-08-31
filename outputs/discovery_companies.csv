@@ -1,14 +1,14 @@
 ﻿rank,company,name_ja,theme,thesis,expected_value,relative_momentum,risks,current_position,confidence_pct,data_quality,as_of
-1,nabtesco,ナブテスコ,robotics_fa,テーマスコア87(confidence 35%)、テーマ内相対モメンタム+10.1%(直近65営業日)、テーマrisk_level=0/3,87.2,10.112462660687966,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.35,estimated,2026-08-29
-2,nvidia,NVIDIA,ai_datacenter,テーマスコア87(confidence 60%)、テーマ内相対モメンタム+13.8%(直近65営業日)、テーマrisk_level=0/3,86.9,13.834546177785011,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.6,estimated,2026-08-29
-3,sumitomo_electric,住友電工,ai_datacenter,テーマスコア87(confidence 60%)、テーマ内相対モメンタム-16.0%(直近65営業日)、テーマrisk_level=0/3,86.9,-16.037085665949974,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.6,estimated,2026-08-29
-4,furukawa_electric,古河電工,ai_datacenter,テーマスコア87(confidence 60%)、テーマ内相対モメンタム-19.1%(直近65営業日)、テーマrisk_level=0/3,86.9,-19.053239135967146,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.6,estimated,2026-08-29
-5,advantest,アドバンテスト,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム+32.0%(直近65営業日)、テーマrisk_level=0/3,83.9,31.988157097464928,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-29
-6,kokusai_electric,KOKUSAI ELECTRIC,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム+16.7%(直近65営業日)、テーマrisk_level=0/3,83.9,16.669155825643895,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-29
-7,shibaura,芝浦メカトロニクス,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム-14.7%(直近65営業日)、テーマrisk_level=0/3,83.9,-14.699359960997533,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-29
-8,towa,TOWA,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム-22.5%(直近65営業日)、テーマrisk_level=0/3,83.9,-22.543216155457728,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-29
-9,ibm,IBM,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム+16.7%(直近65営業日)、テーマrisk_level=0/3,79.9,16.69897192225721,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-29
-10,honeywell,Honeywell (Quantinuum 代理),quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム+13.5%(直近65営業日)、テーマrisk_level=0/3,79.9,13.525084533994551,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-29
-11,rigetti,Rigetti,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム-13.0%(直近65営業日)、テーマrisk_level=0/3,79.9,-12.956587002192105,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-29
-12,dwave,D-Wave,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム-14.5%(直近65営業日)、テーマrisk_level=0/3,79.9,-14.452304182325808,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-29
-13,ionq,IonQ,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム-16.3%(直近65営業日)、テーマrisk_level=0/3,79.9,-16.340249805728387,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-29
+1,nabtesco,ナブテスコ,robotics_fa,テーマスコア87(confidence 35%)、テーマ内相対モメンタム+10.1%(直近65営業日)、テーマrisk_level=0/3,87.1,10.112462660687966,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.35,estimated,2026-08-31
+2,nvidia,NVIDIA,ai_datacenter,テーマスコア87(confidence 60%)、テーマ内相対モメンタム+13.8%(直近65営業日)、テーマrisk_level=0/3,86.9,13.834546177785011,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.6,estimated,2026-08-31
+3,sumitomo_electric,住友電工,ai_datacenter,テーマスコア87(confidence 60%)、テーマ内相対モメンタム-16.0%(直近65営業日)、テーマrisk_level=0/3,86.9,-16.037085665949974,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.6,estimated,2026-08-31
+4,furukawa_electric,古河電工,ai_datacenter,テーマスコア87(confidence 60%)、テーマ内相対モメンタム-19.1%(直近65営業日)、テーマrisk_level=0/3,86.9,-19.053239135967146,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.6,estimated,2026-08-31
+5,advantest,アドバンテスト,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム+32.0%(直近65営業日)、テーマrisk_level=0/3,83.9,31.988157097464928,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-31
+6,kokusai_electric,KOKUSAI ELECTRIC,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム+16.7%(直近65営業日)、テーマrisk_level=0/3,83.9,16.669155825643895,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-31
+7,shibaura,芝浦メカトロニクス,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム-14.7%(直近65営業日)、テーマrisk_level=0/3,83.9,-14.699359960997533,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-31
+8,towa,TOWA,semicap,テーマスコア84(confidence 55%)、テーマ内相対モメンタム-22.5%(直近65営業日)、テーマrisk_level=0/3,83.9,-22.543216155457728,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.55,estimated,2026-08-31
+9,ibm,IBM,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム+16.7%(直近65営業日)、テーマrisk_level=0/3,79.9,16.69897192225721,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-31
+10,honeywell,Honeywell (Quantinuum 代理),quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム+13.5%(直近65営業日)、テーマrisk_level=0/3,79.9,13.525084533994551,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-31
+11,rigetti,Rigetti,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム-13.0%(直近65営業日)、テーマrisk_level=0/3,79.9,-12.956587002192105,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-31
+12,dwave,D-Wave,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム-14.5%(直近65営業日)、テーマrisk_level=0/3,79.9,-14.452304182325808,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-31
+13,ionq,IonQ,quantum,テーマスコア80(confidence 25%)、テーマ内相対モメンタム-16.3%(直近65営業日)、テーマrisk_level=0/3,79.9,-16.340249805728387,テーマrisk_level=0/3(risk_level_by_theme.csv参照),非保有,0.25,estimated,2026-08-31
