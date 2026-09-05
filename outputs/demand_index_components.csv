@@ -1,7 +1,7 @@
 ﻿label,component,score,weight,available,data_quality,note
 real_demand_index,ハイパースケーラーCAPEX,82.00711646986832,0.25,True,verified,YoY=+26%
-real_demand_index,NVIDIA CAPEX,100.0,0.1,True,verified,YoY=+43%
-real_demand_index,TSMC CAPEX,100.0,0.1,True,verified,YoY=+66%
+real_demand_index,NVIDIA CAPEX,100.0,0.1,True,verified,YoY=+41%
+real_demand_index,TSMC CAPEX,100.0,0.1,True,verified,YoY=+71%
 real_demand_index,SOX指数モメンタム,94.9800796812749,0.15,True,proxy,パーセンタイル(n=1255)
 real_demand_index,光通信バスケット(フジクラ/住友電工/古河電工/村田),93.86753883892068,0.15,True,proxy,パーセンタイル(n=1223) (構成銘柄4/4)
 real_demand_index,半導体装置バスケット(ローツェ/アドバンテスト/TOWA/KOKUSAI/芝浦),93.13164349959116,0.1,True,proxy,パーセンタイル(n=1223) (構成銘柄5/5)
