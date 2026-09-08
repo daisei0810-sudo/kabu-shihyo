@@ -1,10 +1,10 @@
 ﻿theme,name_ja,as_of,structural_change,supply_demand,earnings,valuation,fund_flow,policy_tailwind,total,confidence_pct,data_coverage_pct,change_1d,change_1w,change_1m,note
-crypto_xrp,暗号資産 / XRP・XRPL,2026-09-08,,66.3,,,31.5,,56.4,0.35,0.167,,,,
-ai_datacenter,AIデータセンター / 光通信,2026-09-08,,92.0,91.0,,75.2,60.0,86.2,0.6,0.333,,,,
-semicap,半導体装置 / HBM / CoWoS / WFE,2026-09-08,,91.7,100.0,,38.0,,85.0,0.55,0.333,,,,
-robotics_fa,ロボティクス / FA / 減速機 / サーボ,2026-09-08,,92.8,,,67.6,,85.6,0.35,0.167,,,,
-ev_physical_ai,EV / Physical AI / Tesla / Optimus,2026-09-08,,,,,23.8,,23.8,0.1,0.167,,,,
-quantum,量子コンピュータ,2026-09-08,,78.9,,,,,78.9,0.25,0.0,,,,
+crypto_xrp,暗号資産 / XRP・XRPL,2026-09-08,,66.5,,,34.8,,57.4,0.35,0.167,,,,
+ai_datacenter,AIデータセンター / 光通信,2026-09-08,,91.9,91.0,,76.1,60.0,86.3,0.6,0.333,,,,
+semicap,半導体装置 / HBM / CoWoS / WFE,2026-09-08,,90.9,100.0,,37.8,,84.6,0.55,0.333,,,,
+robotics_fa,ロボティクス / FA / 減速機 / サーボ,2026-09-08,,90.2,,,73.6,,85.5,0.35,0.167,,,,
+ev_physical_ai,EV / Physical AI / Tesla / Optimus,2026-09-08,,,,,9.0,,9.0,0.1,0.167,,,,
+quantum,量子コンピュータ,2026-09-08,,81.2,,,,,81.2,0.25,0.0,,,,
 china_ai,中国AI・Physical AI,2026-09-08,,,,,,,,0.0,0.0,,,,china_ai: 利用可能データなし
 policy,政策・補助金・輸出規制・IPO,2026-09-08,,,,,,,,0.0,0.0,,,,policy: 利用可能データなし
 power,電力(Utility CAPEX / Grid / Nuclear / SMR),2026-09-08,,,,,,,,0.0,0.0,,,,power: 利用可能データなし
