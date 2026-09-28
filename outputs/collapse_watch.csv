@@ -3,5 +3,5 @@
 SOX指数下落,False,25日MA乖離=+7.7%(閾値-5%),True
 NVIDIA株価下落,False,25日MA乖離=+2.2%(閾値-8%),True
 ハイパースケーラーCAPEX減速,True,QoQ=-15%(マイナスで悪化),True
-光通信バスケット下落,False,25日MA乖離=-1.6%(閾値-7%),True
+光通信バスケット下落,False,25日MA乖離=-1.4%(閾値-7%),True
 VIX急騰,False,VIX=14.9(閾値>25),True
