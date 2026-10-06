@@ -1,2 +1,2 @@
 ﻿n_predictions,n_pending_evaluations,n_evaluated,n_skipped,hit_rate,avg_excess_return,next_due_date,generated_at
-1020,2772,33,255,,-0.2435,2026-10-06,2026-10-05T00:27:24.098586
+1032,2794,44,258,1.0,-0.2252,2026-10-07,2026-10-06T02:04:25.444582
