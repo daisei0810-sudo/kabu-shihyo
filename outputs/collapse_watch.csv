@@ -2,6 +2,6 @@
 長期金利上昇,False,65日変化=+0.28%pt(閾値+0.3%pt),True
 SOX指数下落,True,25日MA乖離=-11.8%(閾値-5%),True
 NVIDIA株価下落,False,25日MA乖離=-6.5%(閾値-8%),True
-ハイパースケーラーCAPEX減速,True,QoQ=-15%(マイナスで悪化),True
+ハイパースケーラーCAPEX減速,True,QoQ=-69%(マイナスで悪化),True
 光通信バスケット下落,True,25日MA乖離=-19.3%(閾値-7%),True
 VIX急騰,False,VIX=19.5(閾値>25),True

@@ -1,24 +1,24 @@
 ﻿indicator,target,data_quality,confidence_weight,best_lag_days,best_horizon_days,spearman_r_stationary,spearman_r_level,trend_confound,q_spearman,spearman_p_raw,freq,hit_rate,max_dd,sharpe,bs_significant,n_obs,effective_n,insufficient_history,low_n_flag,n_consistent_periods,rank,adopted,confidence_note,q_spearman_global
-xrp_price,xrp,verified,1.0,180,120,-0.4844,-0.3629,False,0.0,0.0,daily,0.571,-0.709,0.202,False,1274,4.2,True,True,1,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-amm_tvl,xrp,verified,1.0,60,120,0.5244,0.4528,False,0.0,0.0,daily,0.167,-0.25,-0.17,False,745,4.1,True,True,0,D,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-stablecoin_tvl,xrp,verified,1.0,14,90,0.7843,0.7947,False,0.0,0.0,daily,0.375,-0.3052,-1.743,False,215,2.1,True,True,2,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-optical_module_demand,fujikura,proxy,0.5,180,90,-0.2486,0.3043,False,0.0,0.0,daily,0.727,-0.3801,1.343,True,868,3.2,True,False,0,C,False,履歴不足: 実効独立サンプル≈3(<10)→信頼不可; proxyデータ → 直接の因果性未確認,0.0
-optical_module_demand,murata,proxy,0.5,180,120,0.6174,0.1889,False,0.0,0.0,daily,0.625,-0.2501,0.922,True,669,2.2,True,True,0,C,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-sox_index,lasertec_rorze,proxy,0.5,180,90,-0.6348,-0.3812,False,0.0,0.0,daily,0.778,-0.4381,1.131,True,683,2.5,True,True,0,C,False,履歴不足: 実効独立サンプル≈3(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+xrp_price,xrp,verified,1.0,180,120,-0.484,-0.3632,False,0.0,0.0,daily,0.571,-0.709,0.202,False,1274,4.2,True,True,1,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+amm_tvl,xrp,verified,1.0,60,120,0.525,0.4514,False,0.0,0.0,daily,0.167,-0.25,-0.17,False,746,4.1,True,True,0,D,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+stablecoin_tvl,xrp,verified,1.0,14,90,0.7865,0.7948,False,0.0,0.0,daily,0.375,-0.3052,-1.743,False,216,2.1,True,True,2,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+optical_module_demand,fujikura,proxy,0.5,180,90,-0.2511,0.3033,False,0.0,0.0,daily,0.727,-0.3801,1.343,True,867,3.2,True,False,0,C,False,履歴不足: 実効独立サンプル≈3(<10)→信頼不可; proxyデータ → 直接の因果性未確認,0.0
+optical_module_demand,murata,proxy,0.5,180,120,0.6183,0.1887,False,0.0,0.0,daily,0.625,-0.2501,0.922,True,668,2.2,True,True,0,C,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+sox_index,lasertec_rorze,proxy,0.5,180,90,-0.6348,-0.3813,False,0.0,0.0,daily,0.778,-0.4381,1.131,True,683,2.5,True,True,0,C,False,履歴不足: 実効独立サンプル≈3(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
 sox_index,kioxia,proxy,0.5,90,120,-0.8064,-0.7394,False,0.0,0.0,daily,0.8,-0.0909,2.627,True,314,1.5,True,True,0,C,False,履歴不足: 実効独立サンプル≈1(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-robotics_peer_basket,harmonic,proxy,0.5,180,120,-0.5329,-0.3511,False,0.0,0.0,daily,0.444,-0.6876,-0.116,False,669,2.2,True,True,1,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-usdjpy_level,harmonic,proxy,0.5,60,120,-0.5954,-0.5596,False,0.0,0.0,daily,0.6,-0.1734,0.897,False,807,4.5,True,True,1,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-ism_mfg_pmi,harmonic,verified,1.0,60,120,-0.214,-0.3231,False,0.0,0.0,monthly,0.5,-0.5401,-0.026,False,924,0.2,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-us_mfg_confidence_oecd,harmonic,verified,1.0,180,120,0.2672,-0.2935,False,0.0,0.0,monthly,0.5,0.0,,False,537,0.1,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-robotics_peer_basket,fanuc,proxy,0.5,30,120,-0.388,-0.3979,False,0.0,0.0,daily,0.5,-0.3064,0.467,False,819,5.5,True,True,1,C,False,履歴不足: 実効独立サンプル≈5(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-usdjpy_level,fanuc,proxy,0.5,90,120,-0.558,-0.4706,False,0.0,0.0,daily,0.6,-0.1659,0.741,False,778,3.7,True,True,2,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-ism_mfg_pmi,fanuc,verified,1.0,60,60,-0.2632,0.1911,False,0.0,0.0,monthly,0.5,-0.3968,-0.96,False,924,0.4,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-us_mfg_confidence_oecd,fanuc,verified,1.0,7,60,-0.2281,-0.1995,False,0.0,0.0,monthly,0.5,0.0,,False,537,0.4,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-durable_goods_orders,fanuc,verified,1.0,60,120,0.2785,-0.2224,False,0.0,0.0,monthly,0.571,-0.2505,0.633,False,1101,0.3,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-robotics_peer_basket,yaskawa,proxy,0.5,90,60,-0.2342,-0.2489,False,0.0,0.0,daily,0.5,-0.4058,0.374,False,819,5.5,True,False,0,C,False,履歴不足: 実効独立サンプル≈5(<10)→信頼不可; proxyデータ → 直接の因果性未確認,0.0
-usdjpy_level,yaskawa,proxy,0.5,60,120,-0.3978,-0.3802,False,0.0,0.0,daily,0.6,-0.3553,0.465,False,807,4.5,True,True,0,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-ism_mfg_pmi,yaskawa,verified,1.0,180,120,-0.4318,-0.4021,False,0.0,0.0,monthly,0.167,-0.5049,-1.194,False,924,0.1,True,True,0,D,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-us_mfg_confidence_oecd,yaskawa,verified,1.0,90,60,-0.4647,-0.5155,False,0.0,0.0,monthly,0.5,0.0,,False,537,0.2,True,True,0,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-durable_goods_orders,yaskawa,verified,1.0,60,120,0.436,0.1952,False,0.0,0.0,monthly,0.571,-0.4302,0.524,False,1101,0.3,True,True,2,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
-us10y_yield,tesla,proxy,0.5,180,120,-0.3355,-0.3951,False,0.0,0.0,daily,0.2,-0.5756,-1.067,False,703,2.3,True,True,0,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
-quantum_peer_basket,quantinuum,proxy,0.5,30,120,0.3904,0.2345,False,0.0,0.0,daily,0.5,-0.1166,0.414,False,853,5.7,True,True,1,C,False,履歴不足: 実効独立サンプル≈6(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+robotics_peer_basket,harmonic,proxy,0.5,180,120,-0.5354,-0.3544,False,0.0,0.0,daily,0.444,-0.6876,-0.116,False,668,2.2,True,True,1,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+usdjpy_level,harmonic,proxy,0.5,60,120,-0.5978,-0.5597,False,0.0,0.0,daily,0.6,-0.1734,0.897,False,806,4.5,True,True,1,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+ism_mfg_pmi,harmonic,verified,1.0,60,120,-0.2137,-0.323,False,0.0,0.0,monthly,0.5,-0.5401,-0.026,False,923,0.2,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+us_mfg_confidence_oecd,harmonic,verified,1.0,180,120,0.2709,-0.2925,False,0.0,0.0,monthly,0.5,0.0,,False,536,0.1,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+robotics_peer_basket,fanuc,proxy,0.5,30,120,-0.3871,-0.3977,False,0.0,0.0,daily,0.5,-0.3064,0.467,False,818,5.5,True,True,1,C,False,履歴不足: 実効独立サンプル≈5(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+usdjpy_level,fanuc,proxy,0.5,90,120,-0.5572,-0.4706,False,0.0,0.0,daily,0.6,-0.1659,0.741,False,777,3.7,True,True,2,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+ism_mfg_pmi,fanuc,verified,1.0,60,60,-0.2634,0.1921,False,0.0,0.0,monthly,0.5,-0.3968,-0.96,False,923,0.4,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+us_mfg_confidence_oecd,fanuc,verified,1.0,7,60,-0.2272,-0.1988,False,0.0,0.0,monthly,0.5,0.0,,False,536,0.4,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+durable_goods_orders,fanuc,verified,1.0,60,120,0.2806,-0.2225,False,0.0,0.0,monthly,0.571,-0.2505,0.633,False,1100,0.3,True,True,1,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+robotics_peer_basket,yaskawa,proxy,0.5,90,60,-0.2326,-0.2468,False,0.0,0.0,daily,0.5,-0.4058,0.374,False,818,5.5,True,False,0,C,False,履歴不足: 実効独立サンプル≈5(<10)→信頼不可; proxyデータ → 直接の因果性未確認,0.0
+usdjpy_level,yaskawa,proxy,0.5,60,120,-0.4022,-0.3807,False,0.0,0.0,daily,0.6,-0.3553,0.465,False,806,4.5,True,True,0,C,False,履歴不足: 実効独立サンプル≈4(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+ism_mfg_pmi,yaskawa,verified,1.0,180,120,-0.4318,-0.4021,False,0.0,0.0,monthly,0.167,-0.5049,-1.194,False,923,0.1,True,True,0,D,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+us_mfg_confidence_oecd,yaskawa,verified,1.0,90,60,-0.4657,-0.5141,False,0.0,0.0,monthly,0.5,0.0,,False,536,0.2,True,True,0,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+durable_goods_orders,yaskawa,verified,1.0,60,120,0.4371,0.1956,False,0.0,0.0,monthly,0.571,-0.4302,0.524,False,1100,0.3,True,True,2,C,False,履歴不足: 実効独立サンプル≈0(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低,0.0
+us10y_yield,tesla,proxy,0.5,180,120,-0.3336,-0.3942,False,0.0,0.0,daily,0.2,-0.5756,-1.067,False,702,2.3,True,True,0,D,False,履歴不足: 実効独立サンプル≈2(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
+quantum_peer_basket,quantinuum,proxy,0.5,30,120,0.3878,0.233,False,0.0,0.0,daily,0.5,-0.1166,0.414,False,852,5.7,True,True,1,C,False,履歴不足: 実効独立サンプル≈6(<10)→信頼不可; 非重複イベント数 < 10 → 統計的信頼度低; proxyデータ → 直接の因果性未確認,0.0
