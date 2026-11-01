@@ -21,10 +21,10 @@ optical_module_demand,murata,above,30,16,26,False,0.0736,-0.0017,0.5,-0.442,0.69
 optical_module_demand,murata,above,60,13,26,False,0.1861,-0.0042,0.462,-0.3591,1.026,1.806,0.0961,0.0097,0.394,True
 optical_module_demand,murata,above,90,9,26,True,0.3228,0.0256,0.667,-0.37,0.619,1.109,0.2996,-0.055,0.9265,False
 optical_module_demand,murata,above,120,8,26,True,0.2078,0.1237,0.625,-0.2327,0.942,1.838,0.1087,0.0073,0.4232,True
-sox_index,lasertec_rorze,above,1,24,24,False,0.0024,0.005,0.583,-0.1855,1.58,0.488,0.6305,-0.0073,0.0116,False
-sox_index,lasertec_rorze,above,7,24,24,False,-0.0032,0.0155,0.583,-0.4927,-0.284,-0.232,0.8189,-0.0305,0.0224,False
-sox_index,lasertec_rorze,above,30,14,24,False,0.0375,0.0051,0.571,-0.4469,0.7,0.904,0.3825,-0.0396,0.1173,False
-sox_index,lasertec_rorze,above,60,13,24,False,0.0085,-0.0535,0.385,-0.7971,0.066,0.115,0.91,-0.1263,0.1459,False
+sox_index,lasertec_rorze,above,1,24,24,False,0.0039,0.0085,0.625,-0.1651,2.653,0.819,0.4213,-0.0056,0.0128,False
+sox_index,lasertec_rorze,above,7,24,24,False,0.0022,0.0155,0.583,-0.4134,0.221,0.181,0.8583,-0.0208,0.0246,False
+sox_index,lasertec_rorze,above,30,14,24,False,0.034,0.0051,0.571,-0.4817,0.609,0.786,0.446,-0.0486,0.1162,False
+sox_index,lasertec_rorze,above,60,13,24,False,0.0064,-0.0543,0.385,-0.8019,0.05,0.088,0.9315,-0.1265,0.1453,False
 sox_index,lasertec_rorze,above,90,11,24,False,0.1844,0.1565,0.727,-0.5683,0.914,1.811,0.1002,-0.0063,0.3723,False
 sox_index,lasertec_rorze,above,120,9,24,True,0.1893,0.1848,0.778,-0.5395,0.63,1.304,0.2285,-0.0502,0.4821,False
 sox_index,kioxia,above,1,9,9,True,0.0463,0.0341,0.667,-0.0774,10.723,2.026,0.0773,0.004,0.088,True
@@ -96,7 +96,7 @@ us10y_yield,tesla,above,30,10,15,False,0.0172,-0.0327,0.4,-0.6377,0.188,0.205,0.
 us10y_yield,tesla,above,60,7,15,True,-0.05,0.027,0.571,-0.7784,-0.277,-0.358,0.7327,-0.2969,0.2162,False
 us10y_yield,tesla,above,90,6,15,True,-0.088,-0.1829,0.167,-0.6793,-0.518,-0.758,0.4827,-0.2461,0.1553,False
 us10y_yield,tesla,above,120,5,15,True,-0.1259,-0.0995,0.2,-0.5756,-1.067,-1.646,0.175,-0.2523,0.0006,False
-quantum_peer_basket,quantinuum,above,1,24,24,False,0.0016,0.002,0.5,-0.1095,2.027,0.626,0.5377,-0.0034,0.0067,False
+quantum_peer_basket,quantinuum,above,1,24,24,False,0.0016,0.002,0.5,-0.1095,2.027,0.626,0.5378,-0.0034,0.0067,False
 quantum_peer_basket,quantinuum,above,7,24,24,False,-0.0023,-0.0027,0.417,-0.2511,-0.445,-0.363,0.7198,-0.0148,0.0095,False
 quantum_peer_basket,quantinuum,above,30,12,24,False,0.015,0.031,0.667,-0.2905,0.498,0.595,0.5639,-0.0306,0.0656,False
 quantum_peer_basket,quantinuum,above,60,9,24,True,0.0087,-0.0166,0.444,-0.1672,0.313,0.458,0.659,-0.025,0.0446,False
