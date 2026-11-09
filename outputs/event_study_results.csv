@@ -96,9 +96,9 @@ us10y_yield,tesla,above,30,10,15,False,0.0172,-0.0327,0.4,-0.6377,0.188,0.205,0.
 us10y_yield,tesla,above,60,7,15,True,-0.05,0.027,0.571,-0.7784,-0.277,-0.358,0.7327,-0.2969,0.2162,False
 us10y_yield,tesla,above,90,6,15,True,-0.088,-0.1829,0.167,-0.6793,-0.518,-0.758,0.4827,-0.2461,0.1553,False
 us10y_yield,tesla,above,120,5,15,True,-0.1259,-0.0995,0.2,-0.5756,-1.067,-1.646,0.175,-0.2523,0.0006,False
-quantum_peer_basket,quantinuum,above,1,25,25,False,0.0006,0.0013,0.56,-0.1117,0.739,0.233,0.8179,-0.0044,0.0053,False
-quantum_peer_basket,quantinuum,above,7,25,25,False,-0.0008,-0.0019,0.44,-0.2954,-0.136,-0.114,0.9104,-0.0149,0.0124,False
-quantum_peer_basket,quantinuum,above,30,14,25,False,0.0065,0.021,0.571,-0.3691,0.219,0.283,0.7815,-0.0353,0.053,False
-quantum_peer_basket,quantinuum,above,60,11,25,False,-0.0025,-0.0166,0.455,-0.2998,-0.072,-0.117,0.9094,-0.0432,0.0359,False
-quantum_peer_basket,quantinuum,above,90,9,25,True,-0.0162,-0.0318,0.333,-0.3366,-0.305,-0.547,0.599,-0.068,0.0427,False
-quantum_peer_basket,quantinuum,above,120,7,25,True,0.0648,0.0742,0.714,-0.0559,1.154,2.107,0.0797,0.0094,0.1204,True
+quantum_peer_basket,quantinuum,above,1,25,25,False,0.001,0.0065,0.52,-0.1338,1.158,0.365,0.7185,-0.0046,0.0064,False
+quantum_peer_basket,quantinuum,above,7,25,25,False,-0.0035,-0.003,0.44,-0.2943,-0.639,-0.532,0.5996,-0.0164,0.0088,False
+quantum_peer_basket,quantinuum,above,30,13,25,False,-0.0035,0.0101,0.538,-0.4143,-0.111,-0.138,0.8922,-0.0481,0.0475,False
+quantum_peer_basket,quantinuum,above,60,10,25,False,-0.0049,-0.0167,0.4,-0.2659,-0.152,-0.235,0.8196,-0.0439,0.0345,False
+quantum_peer_basket,quantinuum,above,90,9,25,True,-0.0078,-0.0134,0.222,-0.2738,-0.16,-0.288,0.781,-0.0551,0.0454,False
+quantum_peer_basket,quantinuum,above,120,7,25,True,0.0477,0.0308,0.571,-0.1018,0.736,1.343,0.2278,-0.0138,0.115,False
