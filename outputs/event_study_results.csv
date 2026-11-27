@@ -1,10 +1,10 @@
 ﻿indicator,target,direction,horizon_days,n_events,n_events_raw,low_n_flag,mean_return,median_return,hit_rate,max_dd,sharpe,t_stat,t_p,bs_ci_lo,bs_ci_hi,bs_ci_significant
-xrp_price,xrp,above,1,19,19,False,0.0014,-0.0063,0.368,-0.3408,0.384,0.105,0.9172,-0.0236,0.0275,False
-xrp_price,xrp,above,7,19,19,False,0.0549,-0.0139,0.421,-0.5275,1.386,1.007,0.3274,-0.0347,0.169,False
-xrp_price,xrp,above,30,12,19,False,0.1458,-0.0346,0.333,-0.5711,0.613,0.733,0.4789,-0.095,0.5657,False
-xrp_price,xrp,above,60,11,19,False,0.066,-0.0138,0.455,-0.6993,0.284,0.46,0.6557,-0.1447,0.3764,False
-xrp_price,xrp,above,90,9,19,True,0.1037,-0.2364,0.333,-0.8803,0.194,0.348,0.7371,-0.2867,0.7232,False
-xrp_price,xrp,above,120,7,19,True,0.0481,0.0489,0.571,-0.7684,0.156,0.284,0.7856,-0.2496,0.3467,False
+xrp_price,xrp,above,1,19,19,False,-0.0039,-0.0209,0.316,-0.3762,-1.033,-0.284,0.7799,-0.0289,0.023,False
+xrp_price,xrp,above,7,19,19,False,0.0515,-0.0139,0.421,-0.5591,1.29,0.937,0.361,-0.0384,0.1657,False
+xrp_price,xrp,above,30,12,19,False,0.1452,-0.0346,0.333,-0.5711,0.611,0.73,0.4807,-0.0953,0.5653,False
+xrp_price,xrp,above,60,11,19,False,0.0595,-0.0226,0.455,-0.7212,0.255,0.413,0.6886,-0.152,0.3711,False
+xrp_price,xrp,above,90,9,19,True,0.0999,-0.2364,0.333,-0.888,0.186,0.334,0.7472,-0.2955,0.7213,False
+xrp_price,xrp,above,120,7,19,True,0.0487,0.0489,0.571,-0.7658,0.158,0.289,0.7824,-0.2477,0.3473,False
 amm_tvl,xrp,above,1,6,6,True,-0.0021,0.0082,0.667,-0.0868,-0.948,-0.146,0.8894,-0.0299,0.022,False
 amm_tvl,xrp,above,7,6,6,True,-0.0037,-0.0396,0.167,-0.25,-0.17,-0.069,0.9473,-0.08,0.1051,False
 stablecoin_tvl,xrp,above,1,8,8,True,0.0052,0.0046,0.625,-0.0659,2.873,0.512,0.6245,-0.0124,0.0249,False
@@ -38,7 +38,7 @@ robotics_peer_basket,harmonic,above,90,11,26,False,-0.0052,-0.0694,0.364,-0.6952
 robotics_peer_basket,harmonic,above,120,10,26,False,-0.0202,-0.03,0.5,-0.6876,-0.129,-0.281,0.7849,-0.1521,0.1174,False
 usdjpy_level,harmonic,above,1,10,10,False,-0.0005,-0.0028,0.4,-0.0573,-0.586,-0.117,0.9096,-0.0085,0.0079,False
 usdjpy_level,harmonic,above,7,10,10,False,-0.0492,-0.0599,0.1,-0.5283,-2.773,-1.461,0.1779,-0.1036,0.0204,False
-usdjpy_level,harmonic,above,30,8,10,True,-0.0149,-0.0741,0.375,-0.7631,-0.123,-0.12,0.9078,-0.2311,0.2206,False
+usdjpy_level,harmonic,above,30,8,10,True,-0.0157,-0.0741,0.375,-0.7656,-0.129,-0.126,0.9031,-0.2329,0.2206,False
 usdjpy_level,harmonic,above,60,7,10,True,0.1402,0.1676,0.571,-0.4587,0.854,1.103,0.3124,-0.0843,0.3749,False
 usdjpy_level,harmonic,above,90,6,10,True,0.4624,0.533,1.0,0.0,4.442,6.502,0.0013,0.3246,0.5773,True
 usdjpy_level,harmonic,above,120,5,10,True,0.0872,0.1014,0.6,-0.1835,0.655,1.011,0.3691,-0.0566,0.234,False
@@ -54,7 +54,7 @@ robotics_peer_basket,fanuc,above,90,10,24,False,0.0409,0.0473,0.6,-0.4075,0.377,
 robotics_peer_basket,fanuc,above,120,10,24,False,0.022,-0.0296,0.4,-0.4874,0.176,0.383,0.7105,-0.0797,0.1304,False
 usdjpy_level,fanuc,above,1,10,10,False,0.006,0.0023,0.9,-0.0239,5.194,1.035,0.3278,-0.0037,0.0184,False
 usdjpy_level,fanuc,above,7,10,10,False,-0.0062,-0.0139,0.5,-0.2253,-0.715,-0.377,0.7151,-0.037,0.0248,False
-usdjpy_level,fanuc,above,30,8,10,True,0.01,0.004,0.5,-0.3435,0.22,0.214,0.8363,-0.0745,0.0959,False
+usdjpy_level,fanuc,above,30,8,10,True,0.0093,0.004,0.5,-0.3482,0.202,0.197,0.8496,-0.0764,0.0959,False
 usdjpy_level,fanuc,above,60,7,10,True,0.0612,0.03,0.714,-0.116,1.122,1.449,0.1976,-0.0129,0.1389,False
 usdjpy_level,fanuc,above,90,6,10,True,0.1462,0.1119,0.833,-0.0497,1.519,2.224,0.0767,0.0361,0.2694,True
 usdjpy_level,fanuc,above,120,5,10,True,0.0693,-0.0019,0.4,-0.1675,0.446,0.688,0.5294,-0.0728,0.27,False
@@ -76,7 +76,7 @@ robotics_peer_basket,yaskawa,above,90,9,22,True,0.0772,0.0731,0.778,-0.3535,0.66
 robotics_peer_basket,yaskawa,above,120,8,22,True,0.094,0.068,0.625,-0.2652,0.68,1.326,0.2263,-0.0316,0.2268,False
 usdjpy_level,yaskawa,above,1,10,10,False,-0.0026,-0.0035,0.4,-0.086,-2.107,-0.42,0.6845,-0.0142,0.0087,False
 usdjpy_level,yaskawa,above,7,10,10,False,-0.0312,-0.0175,0.1,-0.3338,-3.057,-1.611,0.1416,-0.069,0.0023,False
-usdjpy_level,yaskawa,above,30,8,10,True,-0.0502,-0.0694,0.375,-0.5654,-0.894,-0.873,0.4117,-0.1563,0.054,False
+usdjpy_level,yaskawa,above,30,8,10,True,-0.0507,-0.0694,0.375,-0.568,-0.898,-0.876,0.41,-0.1576,0.054,False
 usdjpy_level,yaskawa,above,60,7,10,True,0.0963,0.0405,0.571,-0.1983,1.002,1.294,0.2433,-0.0308,0.2372,False
 usdjpy_level,yaskawa,above,90,6,10,True,0.1041,0.0257,0.5,-0.1776,0.719,1.052,0.3409,-0.0378,0.3045,False
 usdjpy_level,yaskawa,above,120,5,10,True,0.0698,-0.0171,0.4,-0.4049,0.296,0.458,0.6711,-0.1718,0.3603,False
